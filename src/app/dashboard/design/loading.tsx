@@ -1,0 +1,20 @@
+export default function DesignLoading() {
+  return (
+    <div className="space-y-8 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="h-8 w-48 rounded bg-gray-200 dark:bg-gray-800" />
+        <div className="h-10 w-36 rounded-lg bg-gray-200 dark:bg-gray-800" />
+      </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="space-y-6">
+          <div className="h-64 rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900" />
+          <div className="h-48 rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900" />
+        </div>
+        <div className="space-y-6">
+          <div className="h-72 rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900" />
+          <div className="h-48 rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900" />
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,6 +1,6 @@
 import { callClaude } from '@/lib/ai'
 import sharp from 'sharp'
-import { createDataServer } from '@/lib/supabase/data-server'
+import { createClient } from '@supabase/supabase-js'
 
 const SVG_SYSTEM_PROMPT = `You are an SVG artist. Generate clean SVG markup for blog images.
 
@@ -102,11 +102,18 @@ export async function svgToPng(svg: string, width: number, height: number): Prom
   }
 }
 
+function createStorageClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_NEN2_DB_URL!,
+    process.env.NEN2_DB_SERVICE_ROLE_KEY!,
+  )
+}
+
 export async function uploadImageToStorage(
   pngBuffer: Buffer,
   storagePath: string,
 ): Promise<string> {
-  const db = createDataServer()
+  const db = createStorageClient()
 
   const { error } = await db.storage
     .from('blog-images')

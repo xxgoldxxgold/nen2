@@ -41,8 +41,17 @@ ${styleDesc}
 - Clean, modern, professional look
 - IMPORTANT: Set width="1200" height="400" on the svg element`
 
-  const svg = await callClaude(SVG_SYSTEM_PROMPT, prompt, 2048)
-  return extractSVG(svg)
+  // Retry once if SVG extraction fails
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const raw = await callClaude(SVG_SYSTEM_PROMPT, prompt, 4096)
+    try {
+      return extractSVG(raw)
+    } catch (e) {
+      if (attempt === 1) throw e
+      console.warn('SVG generation attempt', attempt + 1, 'failed, retrying...')
+    }
+  }
+  throw new Error('SVG generation failed after retries')
 }
 
 export async function generateCoverSVG(
@@ -65,14 +74,19 @@ Design requirements:
 - Professional and eye-catching design suitable for social media sharing
 - IMPORTANT: Set width="1200" height="630" on the svg element`
 
-  const svg = await callClaude(SVG_SYSTEM_PROMPT, prompt, 2048)
+  const svg = await callClaude(SVG_SYSTEM_PROMPT, prompt, 4096)
   return extractSVG(svg)
 }
 
 function extractSVG(raw: string): string {
-  const match = raw.match(/<svg[\s\S]*<\/svg>/i)
+  if (!raw || raw.trim().length === 0) {
+    throw new Error('Claude returned empty response')
+  }
+  // Strip markdown code blocks if present
+  const cleaned = raw.replace(/^```(?:svg|xml|html)?\s*/im, '').replace(/\s*```\s*$/im, '').trim()
+  const match = cleaned.match(/<svg[\s\S]*<\/svg>/i)
   if (!match) {
-    console.error('Failed to extract SVG from Claude response:', raw.slice(0, 200))
+    console.error('Failed to extract SVG. Response length:', raw.length, 'First 500 chars:', raw.slice(0, 500))
     throw new Error('Claude did not return valid SVG markup')
   }
   return match[0]

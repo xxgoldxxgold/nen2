@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { createDataClient } from '@/lib/supabase/data-client'
-import { Send, Palette, Type, Layout, Sparkles, Eye } from 'lucide-react'
+import { Send, Palette, Type, Layout, Sparkles, Eye, ImageIcon } from 'lucide-react'
 import type { BlogTheme } from '@/lib/theme'
 import { DEFAULT_THEME, deepMerge, generateInlineCSS, generateFontPreloads, migrateOldSettings } from '@/lib/theme'
 
@@ -50,6 +50,8 @@ export default function DesignPage() {
   const [chatInput, setChatInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [headerImageUrl, setHeaderImageUrl] = useState('')
+  const [generatingHeader, setGeneratingHeader] = useState(false)
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -63,7 +65,11 @@ export default function DesignPage() {
         .eq('id', session.user.id)
         .single()
       if (data?.blog_settings) {
-        setSettings(migrateOldSettings(data.blog_settings as Record<string, unknown>))
+        const migrated = migrateOldSettings(data.blog_settings as Record<string, unknown>)
+        setSettings(migrated)
+        if (migrated.images?.header_image_url) {
+          setHeaderImageUrl(migrated.images.header_image_url)
+        }
       }
     }
     fetchSettings()
@@ -134,6 +140,33 @@ export default function DesignPage() {
       return `${scoped}{${body}}`
     }).join('')
   }, [settings])
+
+  const handleGenerateHeaderImage = async () => {
+    setGeneratingHeader(true)
+    try {
+      const res = await fetch('/api/ai/generate-header-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blogName: 'My Blog',
+          theme: settings.colors,
+        }),
+      })
+      const data = await res.json()
+      if (data.imageUrl) {
+        setHeaderImageUrl(data.imageUrl)
+        setSettings(prev => ({
+          ...prev,
+          images: { ...prev.images, header_image_url: data.imageUrl, header_svg: data.svg },
+        }))
+      } else {
+        alert(data.error || 'ヘッダー画像の生成に失敗しました')
+      }
+    } catch {
+      alert('ヘッダー画像の生成に失敗しました')
+    }
+    setGeneratingHeader(false)
+  }
 
   const saveSettings = async () => {
     setSaving(true)
@@ -350,6 +383,31 @@ export default function DesignPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Header Image */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+              <ImageIcon className="h-5 w-5" /> ヘッダー画像
+            </h2>
+            {headerImageUrl ? (
+              <div className="mb-3 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                <img src={headerImageUrl} alt="ヘッダー画像" className="w-full" />
+              </div>
+            ) : (
+              <div className="mb-3 flex h-24 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 text-sm text-gray-400 dark:border-gray-600">
+                ヘッダー画像未設定
+              </div>
+            )}
+            <button
+              onClick={handleGenerateHeaderImage}
+              disabled={generatingHeader}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-purple-50 px-3 py-2.5 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 dark:bg-purple-900/20 dark:text-purple-400"
+            >
+              <Sparkles className={`h-4 w-4 ${generatingHeader ? 'animate-spin' : ''}`} />
+              {generatingHeader ? '生成中...' : headerImageUrl ? 'ヘッダー画像を再生成' : 'ヘッダー画像を生成'}
+            </button>
+            <p className="mt-2 text-xs text-gray-400">テーマカラーに合わせた抽象的なヘッダー画像をAIが生成します</p>
           </div>
         </div>
 

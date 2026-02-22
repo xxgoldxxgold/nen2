@@ -89,6 +89,20 @@ export default async function UserBlogPage({ params }: Props) {
         </div>
       </header>
 
+      {(user.blog_settings as any)?.images?.header_image_url && (
+        <div className="blog-header-image">
+          <Image
+            src={(user.blog_settings as any).images.header_image_url}
+            alt={`${user.display_name}のブログ`}
+            width={1200}
+            height={400}
+            sizes="100vw"
+            priority
+            style={{ width: '100%', height: 'auto' }}
+          />
+        </div>
+      )}
+
       <div className="container" style={{ paddingTop: '2em', paddingBottom: '2em' }}>
         {isTwoCol ? (
           <div className="two-col">

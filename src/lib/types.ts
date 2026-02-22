@@ -1,6 +1,6 @@
 export type Plan = 'free' | 'pro' | 'business'
 export type PostStatus = 'draft' | 'published' | 'scheduled'
-export type AIUsageType = 'generate' | 'rewrite' | 'suggest' | 'seo_analyze' | 'generate_image' | 'suggest_tags' | 'design'
+export type AIUsageType = 'generate' | 'rewrite' | 'suggest' | 'seo_analyze' | 'generate_image' | 'generate_header_image' | 'suggest_tags' | 'design'
 
 export interface User {
   id: string

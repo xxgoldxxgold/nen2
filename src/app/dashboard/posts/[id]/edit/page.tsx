@@ -280,7 +280,7 @@ export default function EditPostPage() {
               />
             </OptionItem>
 
-            <OptionItem label="アイキャッチ画像" tooltip="記事のカバー画像。URLを直接貼り付けてください">
+            <OptionItem label="アイキャッチ画像" tooltip="記事のカバー画像。URLを貼るか、AIで自動生成できます">
               <input
                 type="url"
                 value={coverImageUrl}
@@ -289,6 +289,27 @@ export default function EditPostPage() {
                 placeholder="画像URL"
               />
               {coverImageUrl && <img src={coverImageUrl} alt="Cover" className="mt-2 rounded-lg" />}
+              <button
+                onClick={async () => {
+                  setAiLoading(true)
+                  try {
+                    const res = await fetch('/api/ai/generate-image', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ title, content: contentHtml, postId }),
+                    })
+                    const data = await res.json()
+                    if (data.imageUrl) setCoverImageUrl(data.imageUrl)
+                    else alert(data.error || '画像生成に失敗しました')
+                  } catch { alert('画像生成に失敗しました') }
+                  setAiLoading(false)
+                }}
+                disabled={aiLoading || !title}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-purple-50 px-3 py-2 text-xs font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 dark:bg-purple-900/20 dark:text-purple-400"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                AIでアイキャッチ生成
+              </button>
             </OptionItem>
 
             <OptionItem label="meta description" tooltip="Google検索結果に表示される説明文（最大160文字）。SEOに直結する重要項目です">

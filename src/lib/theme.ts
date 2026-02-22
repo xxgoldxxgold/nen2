@@ -50,6 +50,10 @@ export interface BlogTheme {
       style: 'minimal' | 'card' | 'list'
     }
   }
+  images?: {
+    header_svg?: string
+    header_image_url?: string
+  }
   css: {
     inline: string
   }
@@ -207,6 +211,9 @@ export function generateInlineCSS(theme: BlogTheme): string {
   }
   css += `.logo{font-family:var(--f-head);font-weight:700;color:var(--c-text);text-decoration:none;font-size:1.2em}`
   css += `.nav a{color:var(--c-text2);margin-left:1.5em;text-decoration:none;font-size:var(--fs-sm)}.nav a:hover{color:var(--c-link-h)}`
+
+  // 5b. Blog header image
+  css += `.blog-header-image{width:100%;max-height:400px;overflow:hidden}.blog-header-image img{width:100%;height:100%;object-fit:cover}`
 
   // 6. Cover image
   css += `.cover{margin-bottom:2em}.cover img{width:100%;max-height:400px;object-fit:cover;border-radius:8px}`

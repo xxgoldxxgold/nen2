@@ -52,6 +52,8 @@ export default function DesignPage() {
   const [saving, setSaving] = useState(false)
   const [headerImageUrl, setHeaderImageUrl] = useState('')
   const [generatingHeader, setGeneratingHeader] = useState(false)
+  const [displayName, setDisplayName] = useState('')
+  const [username, setUsername] = useState('')
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -61,14 +63,18 @@ export default function DesignPage() {
       if (!session?.user) return
       const { data } = await db
         .from('users')
-        .select('blog_settings')
+        .select('blog_settings, display_name, username')
         .eq('id', session.user.id)
         .single()
-      if (data?.blog_settings) {
-        const migrated = migrateOldSettings(data.blog_settings as Record<string, unknown>)
-        setSettings(migrated)
-        if (migrated.images?.header_image_url) {
-          setHeaderImageUrl(migrated.images.header_image_url)
+      if (data) {
+        setDisplayName(data.display_name || '')
+        setUsername(data.username || '')
+        if (data.blog_settings) {
+          const migrated = migrateOldSettings(data.blog_settings as Record<string, unknown>)
+          setSettings(migrated)
+          if (migrated.images?.header_image_url) {
+            setHeaderImageUrl(migrated.images.header_image_url)
+          }
         }
       }
     }
@@ -148,7 +154,7 @@ export default function DesignPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          blogName: 'My Blog',
+          blogName: displayName ? `${displayName}のブログ` : 'My Blog',
           theme: settings.colors,
         }),
       })
@@ -183,6 +189,8 @@ export default function DesignPage() {
     }
     await db.from('users').update({ blog_settings: toSave }).eq('id', user.id)
     setSettings(toSave)
+    // Revalidate public blog pages so changes appear immediately
+    fetch('/api/revalidate', { method: 'POST' }).catch(() => {})
     setSaving(false)
   }
 
@@ -209,6 +217,8 @@ export default function DesignPage() {
         const { data: { session: s } } = await authClient.auth.getSession()
         if (s?.user) {
           await dbClient.from('users').update({ blog_settings: newSettings }).eq('id', s.user.id)
+          // Revalidate public blog pages
+          fetch('/api/revalidate', { method: 'POST' }).catch(() => {})
         }
       }
       setChatMessages(prev => [...prev, {

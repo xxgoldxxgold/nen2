@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
 import { checkRateLimit, logAIUsage } from '@/lib/ai'
 import { generateHeaderSVG, svgToPng, uploadImageToStorage } from '@/lib/image-gen'
+import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -52,6 +53,12 @@ export async function POST(request: Request) {
     }
 
     await db.from('users').update({ blog_settings: updatedSettings }).eq('id', user.id)
+
+    // Revalidate public blog page cache
+    const { data: userInfo } = await db.from('users').select('username').eq('id', user.id).single()
+    if (userInfo?.username) {
+      revalidatePath(`/${userInfo.username}`, 'layout')
+    }
 
     await logAIUsage(db, user.id, 'generate_header_image')
 

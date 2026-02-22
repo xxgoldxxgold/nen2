@@ -184,8 +184,9 @@ components: heading_style:"simple", article_card:"minimal"
 デザインの方向性マッピングを参考に、11色すべてを調和するように設定する。
 
 ### モード3: 画像生成を含む変更
-テーマ変更と合わせてヘッダー画像の生成が必要な場合。settingsに加えて \`"generate_header_image": true\` を返す。
+テーマ変更と合わせてヘッダー画像の生成が必要な場合。settingsに加えて \`"generate_header_image": true\` と \`"header_image_style"\` を返す。
 画像だけの要望（テーマ変更なし）でも、現在のテーマに合わせた画像を生成するために \`"generate_header_image": true\` を返してください。
+\`"header_image_style"\` にはユーザーの要望を反映した画像スタイルの説明を英語で記述してください（例: "Hawaii tropical theme with ocean waves, palm trees, hibiscus flowers, and sunset colors"）。
 
 **判断基準**: 雰囲気・スタイル全体を示す指示はモード2。具体的な要素の変更指示はモード1。画像に言及する指示はモード3（モード1/2と併用可）。
 
@@ -193,6 +194,7 @@ components: heading_style:"simple", article_card:"minimal"
 {
   "settings": { ... },
   "generate_header_image": true/false,
+  "header_image_style": "画像スタイルの英語説明（generate_header_imageがtrueの場合のみ）",
   "message": "ユーザーへの説明（日本語）"
 }
 

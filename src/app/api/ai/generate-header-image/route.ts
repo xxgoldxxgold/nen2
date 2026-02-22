@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const allowed = await checkRateLimit(db, user.id, 'generate_header_image')
   if (!allowed) return NextResponse.json({ error: 'AI利用回数の上限に達しました' }, { status: 429 })
 
-  const { blogName, theme } = await request.json()
+  const { blogName, theme, style } = await request.json()
   if (!blogName) return NextResponse.json({ error: 'ブログ名が必要です' }, { status: 400 })
 
   try {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     // Generate SVG via Claude
-    const svg = await generateHeaderSVG(colors, blogName)
+    const svg = await generateHeaderSVG(colors, blogName, style)
 
     // Convert to PNG
     const pngBuffer = await svgToPng(svg, 1200, 400)

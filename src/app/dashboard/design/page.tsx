@@ -147,15 +147,17 @@ export default function DesignPage() {
     }).join('')
   }, [settings])
 
-  const handleGenerateHeaderImage = async () => {
+  const handleGenerateHeaderImage = async (opts?: { style?: string; colors?: BlogTheme['colors'] }) => {
     setGeneratingHeader(true)
+    setChatMessages(prev => [...prev, { role: 'ai', content: 'ヘッダー画像を生成中...' }])
     try {
       const res = await fetch('/api/ai/generate-header-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           blogName: displayName ? `${displayName}のブログ` : 'My Blog',
-          theme: settings.colors,
+          theme: opts?.colors || settings.colors,
+          style: opts?.style,
         }),
       })
       const data = await res.json()
@@ -165,11 +167,12 @@ export default function DesignPage() {
           ...prev,
           images: { ...prev.images, header_image_url: data.imageUrl, header_svg: data.svg },
         }))
+        setChatMessages(prev => [...prev, { role: 'ai', content: 'ヘッダー画像を生成しました！' }])
       } else {
-        alert(data.error || 'ヘッダー画像の生成に失敗しました')
+        setChatMessages(prev => [...prev, { role: 'ai', content: `画像生成エラー: ${data.error || '不明なエラー'}` }])
       }
     } catch {
-      alert('ヘッダー画像の生成に失敗しました')
+      setChatMessages(prev => [...prev, { role: 'ai', content: 'ヘッダー画像の生成に失敗しました' }])
     }
     setGeneratingHeader(false)
   }
@@ -228,7 +231,8 @@ export default function DesignPage() {
 
       // Auto-trigger header image generation if AI recommends it
       if (data.generate_header_image) {
-        handleGenerateHeaderImage()
+        const newColors = (data.settings as BlogTheme)?.colors || settings.colors
+        handleGenerateHeaderImage({ style: data.header_image_style, colors: newColors })
       }
     } catch {
       setChatMessages(prev => [...prev, {
@@ -415,7 +419,7 @@ export default function DesignPage() {
               </div>
             )}
             <button
-              onClick={handleGenerateHeaderImage}
+              onClick={() => handleGenerateHeaderImage()}
               disabled={generatingHeader}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-purple-50 px-3 py-2.5 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 dark:bg-purple-900/20 dark:text-purple-400"
             >

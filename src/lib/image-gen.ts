@@ -19,7 +19,12 @@ RULES:
 export async function generateHeaderSVG(
   theme: { primary: string; background: string; surface: string; text: string },
   blogName: string,
+  style?: string,
 ): Promise<string> {
+  const styleDesc = style
+    ? `- Design theme/mood: ${style}\n- Incorporate visual elements that evoke this theme`
+    : `- Abstract geometric pattern as background decoration`
+
   const prompt = `Create a blog header banner SVG with width="1200" height="400" viewBox="0 0 1200 400".
 
 Color palette:
@@ -29,7 +34,7 @@ Color palette:
 - Text: ${theme.text}
 
 Design requirements:
-- Abstract geometric pattern as background decoration
+${styleDesc}
 - Blog name "${blogName}" centered, large text (48-64px), font-family="sans-serif", fill="${theme.text}"
 - Subtle gradient background using primary and background colors
 - Decorative shapes (circles, lines, polygons) using primary color at various opacities

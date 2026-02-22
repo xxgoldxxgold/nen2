@@ -31,8 +31,8 @@ export async function POST(request: Request) {
     // Convert to PNG
     const pngBuffer = await svgToPng(svg, 1200, 400)
 
-    // Upload to Supabase Storage
-    const storagePath = `${user.id}/header.png`
+    // Upload to Supabase Storage (unique filename to bust CDN/browser cache)
+    const storagePath = `${user.id}/header-${Date.now()}.png`
     const imageUrl = await uploadImageToStorage(pngBuffer, storagePath)
 
     // Update blog_settings with image info

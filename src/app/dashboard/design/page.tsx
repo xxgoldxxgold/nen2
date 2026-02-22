@@ -225,6 +225,11 @@ export default function DesignPage() {
         role: 'ai',
         content: data.message || 'デザインを更新しました（自動保存済み）',
       }])
+
+      // Auto-trigger header image generation if AI recommends it
+      if (data.generate_header_image) {
+        handleGenerateHeaderImage()
+      }
     } catch {
       setChatMessages(prev => [...prev, {
         role: 'ai',

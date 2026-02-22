@@ -6,7 +6,7 @@ import type { Metadata } from 'next'
 import BlogThemeWrapper, { getThemeLayout } from '@/components/blog/BlogThemeWrapper'
 import Avatar from '@/components/blog/Avatar'
 
-export const revalidate = 300
+export const revalidate = 60
 export const dynamicParams = true
 export async function generateStaticParams() { return [] }
 

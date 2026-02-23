@@ -160,6 +160,13 @@ export default function DesignPage() {
           style: opts?.style,
         }),
       })
+      if (!res.ok) {
+        let errMsg = `HTTP ${res.status}`
+        try { const errData = await res.json(); errMsg = errData.error || errMsg } catch { /* non-JSON response */ }
+        setChatMessages(prev => [...prev, { role: 'ai', content: `画像生成エラー: ${errMsg}` }])
+        setGeneratingHeader(false)
+        return
+      }
       const data = await res.json()
       if (data.imageUrl) {
         setHeaderImageUrl(data.imageUrl)
@@ -171,8 +178,9 @@ export default function DesignPage() {
       } else {
         setChatMessages(prev => [...prev, { role: 'ai', content: `画像生成エラー: ${data.error || '不明なエラー'}` }])
       }
-    } catch {
-      setChatMessages(prev => [...prev, { role: 'ai', content: 'ヘッダー画像の生成に失敗しました' }])
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setChatMessages(prev => [...prev, { role: 'ai', content: `画像生成エラー: ${msg}` }])
     }
     setGeneratingHeader(false)
   }

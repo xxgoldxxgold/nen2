@@ -115,14 +115,15 @@ export async function svgToPng(svg: string, width: number, height: number): Prom
 
   const buf = Buffer.from(processedSvg)
   try {
-    return await sharp(buf, { density: 150 })
+    const result = await sharp(buf, { density: 150 })
       .resize(width, height, { fit: 'cover' })
-      .png()
+      .png({ compressionLevel: 9, quality: 80 })
       .toBuffer()
+    // Ensure proper Node.js Buffer (Vercel compatibility)
+    return Buffer.from(result)
   } catch (err) {
     console.error('sharp SVG→PNG conversion failed:', err)
-    // Fallback: create a simple colored PNG with the theme colors
-    return await sharp({
+    const result = await sharp({
       create: {
         width,
         height,
@@ -132,6 +133,7 @@ export async function svgToPng(svg: string, width: number, height: number): Prom
     })
       .png()
       .toBuffer()
+    return Buffer.from(result)
   }
 }
 
@@ -148,15 +150,19 @@ export async function uploadImageToStorage(
 ): Promise<string> {
   const db = createStorageClient()
 
+  // Ensure we pass a proper Uint8Array for Supabase compatibility
+  const uploadData = new Uint8Array(pngBuffer)
+  console.log('Uploading to storage:', storagePath, 'size:', uploadData.length, 'bytes')
+
   const { error } = await db.storage
     .from('blog-images')
-    .upload(storagePath, pngBuffer, {
+    .upload(storagePath, uploadData, {
       contentType: 'image/png',
       upsert: true,
     })
 
   if (error) {
-    console.error('Storage upload error:', error)
+    console.error('Storage upload error:', JSON.stringify(error))
     throw new Error(`Storage upload failed: ${error.message}`)
   }
 

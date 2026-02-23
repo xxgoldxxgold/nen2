@@ -55,7 +55,7 @@ Composition requirements:
 
   // Retry once if SVG extraction fails
   for (let attempt = 0; attempt < 2; attempt++) {
-    const raw = await callClaude(SVG_SYSTEM_PROMPT, prompt, 8192)
+    const raw = await callClaude(SVG_SYSTEM_PROMPT, prompt, 6000, 'claude-haiku-4-5-20251001')
     try {
       return extractSVG(raw)
     } catch (e) {
@@ -86,7 +86,7 @@ Design requirements:
 - Semi-transparent background behind title text for readability
 - IMPORTANT: width="1200" height="630" on the svg element`
 
-  const svg = await callClaude(SVG_SYSTEM_PROMPT, prompt, 8192)
+  const svg = await callClaude(SVG_SYSTEM_PROMPT, prompt, 6000, 'claude-haiku-4-5-20251001')
   return extractSVG(svg)
 }
 

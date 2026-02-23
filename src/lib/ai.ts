@@ -4,9 +4,14 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
 
-export async function callClaude(systemPrompt: string, userPrompt: string, maxTokens = 2048): Promise<string> {
+export async function callClaude(
+  systemPrompt: string,
+  userPrompt: string,
+  maxTokens = 2048,
+  model: 'claude-sonnet-4-6' | 'claude-haiku-4-5-20251001' = 'claude-sonnet-4-6',
+): Promise<string> {
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model,
     max_tokens: maxTokens,
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { createDataClient } from '@/lib/supabase/data-client'
 import { Send, Palette, Type, Layout, Sparkles, Eye, ImageIcon, Upload } from 'lucide-react'
 import type { BlogTheme } from '@/lib/theme'
-import { DEFAULT_THEME, deepMerge, generateInlineCSS, generateFontPreloads, migrateOldSettings } from '@/lib/theme'
+import { DEFAULT_THEME, generateInlineCSS, migrateOldSettings } from '@/lib/theme'
 
 const layoutTypes = [
   { id: 'single_column', name: 'シングル', desc: '1カラム、Medium風' },
@@ -57,6 +57,8 @@ export default function DesignPage() {
   const [username, setUsername] = useState('')
   const initialLoadRef = useRef(true)
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const previewContainerRef = useRef<HTMLDivElement>(null)
+  const [previewScale, setPreviewScale] = useState(0.6)
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -116,77 +118,44 @@ export default function DesignPage() {
   const previewStyleRef = useRef<HTMLStyleElement | null>(null)
 
   const buildPreviewCSS = useCallback((s: BlogTheme): string => {
-    const c = s.colors
-    const ty = s.typography
-    const l = s.layout
-    const comp = s.components
+    // Generate the real blog CSS, then scope it under #tp
+    const rawCSS = generateInlineCSS(s)
+
+    // Extract @font-face rules (keep unscoped)
+    const fontFaces = rawCSS.match(/@font-face\{[^}]+\}/g) || []
+
+    // Remove @font-face, @media, and :root rules from the raw CSS
+    let body = rawCSS
+      .replace(/@font-face\{[^}]+\}/g, '')
+      .replace(/@media[^{]+\{[^{}]*(\{[^}]*\}[^{}]*)*\}/g, '')
+      .replace(/:root\{[^}]+\}/, '')
+
+    // Scope remaining rules under #tp
     const P = '#tp'
+    const scoped = body.replace(/([^{}]+)\{/g, (match, selector: string) => {
+      const trimmed = selector.trim()
+      if (!trimmed || trimmed.startsWith('@')) return match
+      // Handle comma-separated selectors
+      const parts = trimmed.split(',').map((s: string) => {
+        const t = s.trim()
+        if (t === 'body' || t === '*' || t.startsWith('*::')) return `${P}${t === 'body' ? '' : ' ' + t}`
+        return `${P} ${t}`
+      })
+      return parts.join(',') + '{'
+    })
 
-    let css = ''
-
-    // Font faces (global, no scope needed)
-    const fontFaces = generateInlineCSS(s).match(/@font-face\{[^}]+\}/g) || []
-    css += fontFaces.join('')
-
-    // CSS variables + body styles on #tp
+    // Build CSS variables on #tp (replacing :root)
+    const c = s.colors, ty = s.typography, l = s.layout
     const effectiveMaxWidth = l.type === 'two_column' ? '1100px' : l.max_width
-    css += `${P}{`
-    css += `--c-primary:${c.primary};--c-bg:${c.background};--c-surface:${c.surface};--c-text:${c.text};--c-text2:${c.text_secondary};--c-text-m:${c.text_muted};--c-border:${c.border};--c-link:${c.link};--c-link-h:${c.link_hover};--c-code-bg:${c.code_bg};--c-code:${c.code_text};`
-    css += `--f-head:${ty.font_family.heading};--f-body:${ty.font_family.body};--f-code:${ty.font_family.code};`
-    css += `--fs-base:${ty.font_size.base};--fs-sm:${ty.font_size.small};--fs-h1:${ty.font_size.h1};--fs-h2:${ty.font_size.h2};--fs-h3:${ty.font_size.h3};`
-    css += `--lh:${ty.line_height.body};--lh-head:${ty.line_height.heading};--mw:${effectiveMaxWidth};--pad:24px;`
-    css += `font-family:var(--f-body);line-height:var(--lh);color:var(--c-text);background:var(--c-bg);-webkit-font-smoothing:antialiased`
-    css += `}`
+    let vars = `${P}{`
+    vars += `--c-primary:${c.primary};--c-bg:${c.background};--c-surface:${c.surface};--c-text:${c.text};--c-text2:${c.text_secondary};--c-text-m:${c.text_muted};--c-border:${c.border};--c-link:${c.link};--c-link-h:${c.link_hover};--c-code-bg:${c.code_bg};--c-code:${c.code_text};`
+    vars += `--f-head:${ty.font_family.heading};--f-body:${ty.font_family.body};--f-code:${ty.font_family.code};`
+    vars += `--fs-base:${ty.font_size.base};--fs-sm:${ty.font_size.small};--fs-h1:${ty.font_size.h1};--fs-h2:${ty.font_size.h2};--fs-h3:${ty.font_size.h3};`
+    vars += `--lh:${ty.line_height.body};--lh-head:${ty.line_height.heading};--mw:${effectiveMaxWidth};--pad:24px;`
+    vars += `font-family:var(--f-body);font-size:var(--fs-base);line-height:var(--lh);color:var(--c-text);background:var(--c-bg);margin:0;-webkit-font-smoothing:antialiased`
+    vars += `}`
 
-    // Element styles — all prefixed with #tp
-    css += `${P} *,${P} *::before,${P} *::after{box-sizing:border-box}`
-    css += `${P} img{max-width:100%;height:auto;display:block}`
-    css += `${P} a{color:var(--c-link);text-decoration:underline}${P} a:hover{color:var(--c-link-h)}`
-    css += `${P} .container{max-width:var(--mw);margin:0 auto;padding:0 var(--pad)}`
-
-    // Header
-    css += `${P} .header{border-bottom:1px solid var(--c-border)}`
-    css += `${P} .header-inner{max-width:var(--mw);margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1em var(--pad)}`
-    if (l.header.style === 'centered') css += `${P} .header-inner{flex-direction:column;gap:0.5em;text-align:center}`
-    else if (l.header.style === 'minimal') css += `${P} .logo{font-size:0.95em}`
-    css += `${P} .logo{font-family:var(--f-head);font-weight:700;color:var(--c-text);text-decoration:none;font-size:1.2em}`
-    css += `${P} .nav a{color:var(--c-text2);margin-left:1.5em;text-decoration:none;font-size:var(--fs-sm)}${P} .nav a:hover{color:var(--c-link-h)}`
-
-    // Two-column layout
-    if (l.type === 'two_column') {
-      css += `${P} .two-col{display:grid;grid-template-columns:1fr 280px;gap:2.5em;align-items:start}`
-      css += `${P} .two-col__main{min-width:0}`
-      css += `${P} .sidebar-section{background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;padding:1.2em;margin-bottom:1.2em}`
-      css += `${P} .sidebar-section h3{font-size:var(--fs-sm);font-weight:700;margin:0 0 0.8em;color:var(--c-text)}`
-    }
-
-    // Article list & cards
-    css += `${P} .article-list{display:flex;flex-direction:column;gap:1.5em}`
-    css += `${P} .article-card{text-decoration:none;color:inherit;display:block;transition:box-shadow 0.2s}`
-    css += `${P} .article-card__thumbnail img{aspect-ratio:16/9;object-fit:cover;width:100%;border-radius:8px}`
-    css += `${P} .article-card__title{font-size:1.1em;font-weight:700;margin:0.5em 0;color:var(--c-text)}`
-    css += `${P} .article-card__excerpt{font-size:var(--fs-sm);color:var(--c-text2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}`
-    css += `${P} .article-card__meta{font-size:var(--fs-sm);color:var(--c-text-m);margin-top:0.3em}`
-
-    switch (comp.article_card.style) {
-      case 'card':
-        css += `${P} .article-card{border:1px solid var(--c-border);border-radius:8px;overflow:hidden}${P} .article-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08)}${P} .article-card__body{padding:1em}${P} .article-card__thumbnail img{border-radius:0}`
-        break
-      case 'list':
-        css += `${P} .article-card{display:flex;gap:1em}${P} .article-card__thumbnail{width:200px;flex-shrink:0}`
-        break
-      default:
-        css += `${P} .article-card{border-bottom:1px solid var(--c-border);padding-bottom:1.5em}`
-    }
-
-    // Footer
-    css += `${P} .footer{border-top:1px solid var(--c-border);padding:2em 0;text-align:center;color:var(--c-text-m);font-size:var(--fs-sm)}`
-
-    // Author bio
-    css += `${P} .author-bio{display:flex;gap:12px;align-items:center;padding:1.5em 0;margin-bottom:2em}`
-    css += `${P} .author-bio__name{font-weight:700}${P} .author-bio__description{font-size:var(--fs-sm);color:var(--c-text2);margin:0}`
-
-    return css
+    return fontFaces.join('') + vars + scoped
   }, [])
 
   // Inject preview CSS via ref for reliable updates
@@ -195,6 +164,19 @@ export default function DesignPage() {
       previewStyleRef.current.textContent = buildPreviewCSS(settings)
     }
   }, [settings, buildPreviewCSS])
+
+  // Calculate preview zoom based on container width
+  useEffect(() => {
+    const el = previewContainerRef.current
+    if (!el) return
+    const observer = new ResizeObserver((entries) => {
+      const w = entries[0].contentRect.width
+      const virtualWidth = settings.layout.type === 'two_column' ? 1100 : 780
+      setPreviewScale(Math.min(1, (w - 16) / virtualWidth))
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [settings.layout.type])
 
   const handleGenerateHeaderImage = async (opts?: { style?: string; colors?: BlogTheme['colors'] }) => {
     setGeneratingHeader(true)
@@ -651,40 +633,56 @@ export default function DesignPage() {
               <Eye className="h-4 w-4 text-gray-500" />
               <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">プレビュー</h2>
             </div>
-            <div className="p-2">
+            <div ref={previewContainerRef} className="overflow-hidden p-2">
               <style ref={previewStyleRef} />
-              <div id="tp" className="overflow-hidden rounded-lg" style={{ fontSize: '12px' }}>
-                <div className="header">
-                  <div className="header-inner" style={{ padding: '0.7em 1em' }}>
-                    <span className="logo" style={{ fontSize: '1em' }}>
-                      {displayName ? `${displayName}のブログ` : 'My Blog'}
-                    </span>
-                    <nav className="nav"><a href="#" onClick={e => e.preventDefault()}>ホーム</a></nav>
+              <div
+                id="tp"
+                className="overflow-hidden rounded-lg"
+                style={{
+                  width: settings.layout.type === 'two_column' ? '1100px' : '780px',
+                  zoom: previewScale,
+                }}
+              >
+                {headerImageUrl ? (
+                  <div className="blog-header-image" style={{ position: 'relative', maxHeight: '200px' }}>
+                    <img src={headerImageUrl} alt="" style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.45) 100%)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <span className="logo" style={{ color: '#fff', fontSize: '1.5em', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+                        {displayName ? `${displayName}のブログ` : 'My Blog'}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                {headerImageUrl && (
-                  <div style={{ maxHeight: '80px', overflow: 'hidden' }}>
-                    <img src={headerImageUrl} alt="" style={{ width: '100%', height: '80px', objectFit: 'cover' }} />
+                ) : (
+                  <div className="header">
+                    <div className="header-inner">
+                      <span className="logo">
+                        {displayName ? `${displayName}のブログ` : 'My Blog'}
+                      </span>
+                      <nav className="nav"><a href="#" onClick={e => e.preventDefault()}>ホーム</a></nav>
+                    </div>
                   </div>
                 )}
-                <div className="container" style={{ padding: '1em' }}>
+                <div className="container" style={{ paddingTop: '2em', paddingBottom: '2em' }}>
                   {settings.layout.type === 'two_column' ? (
                     <div className="two-col">
                       <div className="two-col__main">
                         <div className="article-list">
-                          {['サンプル記事タイトル', '2番目の記事です'].map((title, i) => (
+                          {['サンプル記事タイトル', '2番目の記事です', '3番目の記事タイトル'].map((title, i) => (
                             <div key={i} className="article-card">
                               <div className="article-card__thumbnail">
                                 <img
-                                  src={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="225"><rect fill="${settings.colors.primary}20" width="400" height="225"/><rect fill="${settings.colors.primary}15" x="40" y="30" width="320" height="165" rx="8"/></svg>`)}`}
+                                  src={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="338"><rect fill="${settings.colors.primary}20" width="600" height="338"/><rect fill="${settings.colors.primary}15" x="60" y="45" width="480" height="248" rx="12"/></svg>`)}`}
                                   alt=""
-                                  style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '8px' }}
                                 />
                               </div>
                               <div className="article-card__body">
-                                <div className="article-card__title">{title}</div>
+                                <h2 className="article-card__title">{title}</h2>
                                 <p className="article-card__excerpt">プレビュー用のサンプルテキストです。記事の概要がここに表示されます。</p>
-                                <div className="article-card__meta">2025年1月15日</div>
+                                <div className="article-card__meta">2025年1月{15 + i}日</div>
                               </div>
                             </div>
                           ))}
@@ -692,18 +690,31 @@ export default function DesignPage() {
                       </div>
                       <aside className="two-col__side">
                         <div className="sidebar-section">
-                          <h3>プロフィール</h3>
-                          <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--c-text2)', margin: 0 }}>ブログの著者紹介</p>
+                          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: `${settings.colors.primary}30`, flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontWeight: 700 }}>{displayName || 'ユーザー名'}</div>
+                              <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--c-text2)', margin: '0.3em 0 0' }}>ブログの著者紹介文がここに入ります</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="sidebar-section">
+                          <h3>カテゴリー</h3>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5em', fontSize: 'var(--fs-sm)' }}>
+                            <a href="#" onClick={e => e.preventDefault()}>テクノロジー</a>
+                            <a href="#" onClick={e => e.preventDefault()}>デザイン</a>
+                            <a href="#" onClick={e => e.preventDefault()}>日記</a>
+                          </div>
                         </div>
                       </aside>
                     </div>
                   ) : (
                     <>
-                      <div className="author-bio">
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: `${settings.colors.primary}30`, flexShrink: 0 }} />
+                      <div className="author-bio" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0 }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: `${settings.colors.primary}30`, flexShrink: 0 }} />
                         <div>
-                          <div className="author-bio__name" style={{ fontSize: '0.9em' }}>{displayName || 'ユーザー名'}</div>
-                          <p className="author-bio__description">ブログの著者紹介</p>
+                          <div className="author-bio__name">{displayName || 'ユーザー名'}</div>
+                          <p className="author-bio__description">ブログの著者紹介文がここに入ります</p>
                         </div>
                       </div>
                       <div className="article-list">
@@ -711,15 +722,14 @@ export default function DesignPage() {
                           <div key={i} className="article-card">
                             <div className="article-card__thumbnail">
                               <img
-                                src={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="225"><rect fill="${settings.colors.primary}20" width="400" height="225"/><rect fill="${settings.colors.primary}15" x="40" y="30" width="320" height="165" rx="8"/></svg>`)}`}
+                                src={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="338"><rect fill="${settings.colors.primary}20" width="600" height="338"/><rect fill="${settings.colors.primary}15" x="60" y="45" width="480" height="248" rx="12"/></svg>`)}`}
                                 alt=""
-                                style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '8px' }}
                               />
                             </div>
                             <div className="article-card__body">
-                              <div className="article-card__title">{title}</div>
+                              <h2 className="article-card__title">{title}</h2>
                               <p className="article-card__excerpt">プレビュー用のサンプルテキストです。記事の概要がここに表示されます。</p>
-                              <div className="article-card__meta">2025年1月15日</div>
+                              <div className="article-card__meta">2025年1月{15 + i}日</div>
                             </div>
                           </div>
                         ))}
@@ -727,7 +737,7 @@ export default function DesignPage() {
                     </>
                   )}
                 </div>
-                <div className="footer" style={{ padding: '0.7em 0', fontSize: '0.8em' }}>
+                <div className="footer">
                   Powered by NEN2
                 </div>
               </div>

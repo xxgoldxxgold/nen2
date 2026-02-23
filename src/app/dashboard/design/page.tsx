@@ -118,44 +118,79 @@ export default function DesignPage() {
   const previewStyleRef = useRef<HTMLStyleElement | null>(null)
 
   const buildPreviewCSS = useCallback((s: BlogTheme): string => {
-    // Generate the real blog CSS, then scope it under #tp
-    const rawCSS = generateInlineCSS(s)
-
-    // Extract @font-face rules (keep unscoped)
-    const fontFaces = rawCSS.match(/@font-face\{[^}]+\}/g) || []
-
-    // Remove @font-face, @media, and :root rules from the raw CSS
-    let body = rawCSS
-      .replace(/@font-face\{[^}]+\}/g, '')
-      .replace(/@media[^{]+\{[^{}]*(\{[^}]*\}[^{}]*)*\}/g, '')
-      .replace(/:root\{[^}]+\}/, '')
-
-    // Scope remaining rules under #tp
+    const c = s.colors, ty = s.typography, l = s.layout, comp = s.components
     const P = '#tp'
-    const scoped = body.replace(/([^{}]+)\{/g, (match, selector: string) => {
-      const trimmed = selector.trim()
-      if (!trimmed || trimmed.startsWith('@')) return match
-      // Handle comma-separated selectors
-      const parts = trimmed.split(',').map((s: string) => {
-        const t = s.trim()
-        if (t === 'body' || t === '*' || t.startsWith('*::')) return `${P}${t === 'body' ? '' : ' ' + t}`
-        return `${P} ${t}`
-      })
-      return parts.join(',') + '{'
-    })
+    let css = ''
 
-    // Build CSS variables on #tp (replacing :root)
-    const c = s.colors, ty = s.typography, l = s.layout
-    const effectiveMaxWidth = l.type === 'two_column' ? '1100px' : l.max_width
-    let vars = `${P}{`
-    vars += `--c-primary:${c.primary};--c-bg:${c.background};--c-surface:${c.surface};--c-text:${c.text};--c-text2:${c.text_secondary};--c-text-m:${c.text_muted};--c-border:${c.border};--c-link:${c.link};--c-link-h:${c.link_hover};--c-code-bg:${c.code_bg};--c-code:${c.code_text};`
-    vars += `--f-head:${ty.font_family.heading};--f-body:${ty.font_family.body};--f-code:${ty.font_family.code};`
-    vars += `--fs-base:${ty.font_size.base};--fs-sm:${ty.font_size.small};--fs-h1:${ty.font_size.h1};--fs-h2:${ty.font_size.h2};--fs-h3:${ty.font_size.h3};`
-    vars += `--lh:${ty.line_height.body};--lh-head:${ty.line_height.heading};--mw:${effectiveMaxWidth};--pad:24px;`
-    vars += `font-family:var(--f-body);font-size:var(--fs-base);line-height:var(--lh);color:var(--c-text);background:var(--c-bg);margin:0;-webkit-font-smoothing:antialiased`
-    vars += `}`
+    // Font faces (global)
+    const fontFaces = generateInlineCSS(s).match(/@font-face\{[^}]+\}/g) || []
+    css += fontFaces.join('')
 
-    return fontFaces.join('') + vars + scoped
+    // CSS variables + body styles on #tp
+    const mw = l.type === 'two_column' ? '1100px' : l.max_width
+    css += `${P}{--c-primary:${c.primary};--c-bg:${c.background};--c-surface:${c.surface};--c-text:${c.text};--c-text2:${c.text_secondary};--c-text-m:${c.text_muted};--c-border:${c.border};--c-link:${c.link};--c-link-h:${c.link_hover};--c-code-bg:${c.code_bg};--c-code:${c.code_text};`
+    css += `--f-head:${ty.font_family.heading};--f-body:${ty.font_family.body};--f-code:${ty.font_family.code};`
+    css += `--fs-base:${ty.font_size.base};--fs-sm:${ty.font_size.small};--fs-h1:${ty.font_size.h1};--fs-h2:${ty.font_size.h2};--fs-h3:${ty.font_size.h3};`
+    css += `--lh:${ty.line_height.body};--lh-head:${ty.line_height.heading};--mw:${mw};--pad:24px;`
+    css += `font-family:var(--f-body);font-size:var(--fs-base);line-height:var(--lh);color:var(--c-text);background:var(--c-bg);margin:0;-webkit-font-smoothing:antialiased}`
+
+    // Base resets
+    css += `${P} *,${P} *::before,${P} *::after{box-sizing:border-box}`
+    css += `${P} img{max-width:100%;height:auto;display:block}`
+    css += `${P} a{color:var(--c-link);text-decoration:underline}${P} a:hover{color:var(--c-link-h)}`
+    css += `${P} p{margin:0}`
+
+    // Layout
+    css += `${P} .container{max-width:var(--mw);margin:0 auto;padding:0 var(--pad)}`
+
+    // Header
+    css += `${P} .header{border-bottom:1px solid var(--c-border)}`
+    css += `${P} .header-inner{max-width:var(--mw);margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1em var(--pad)}`
+    if (l.header.style === 'centered') css += `${P} .header-inner{flex-direction:column;gap:0.5em;text-align:center}`
+    else if (l.header.style === 'minimal') css += `${P} .header .logo{font-size:0.95em}`
+    css += `${P} .logo{font-family:var(--f-head);font-weight:700;color:var(--c-text);text-decoration:none;font-size:1.2em}`
+    css += `${P} .nav a{color:var(--c-text2);margin-left:1.5em;text-decoration:none;font-size:var(--fs-sm)}${P} .nav a:hover{color:var(--c-link-h)}`
+
+    // Header image
+    css += `${P} .blog-header-image{width:100%;max-height:400px;overflow:hidden}${P} .blog-header-image img{width:100%;height:100%;object-fit:cover}`
+
+    // Two-column
+    if (l.type === 'two_column') {
+      css += `${P} .two-col{display:grid;grid-template-columns:1fr 280px;gap:2.5em;align-items:start}`
+      css += `${P} .two-col__main{min-width:0}`
+      css += `${P} .two-col__side{position:sticky;top:2em}`
+      css += `${P} .sidebar-section{background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;padding:1.2em;margin-bottom:1.2em}`
+      css += `${P} .sidebar-section h3{font-size:var(--fs-sm);font-weight:700;margin:0 0 0.8em;color:var(--c-text)}`
+    }
+
+    // Article cards
+    css += `${P} .article-list{display:flex;flex-direction:column;gap:1.5em}`
+    css += `${P} .article-card{text-decoration:none;color:inherit;display:block;transition:box-shadow 0.2s}`
+    css += `${P} .article-card__thumbnail img{aspect-ratio:16/9;object-fit:cover;width:100%;border-radius:8px}`
+    css += `${P} .article-card__title{font-size:1.1em;font-weight:700;margin:0.5em 0 0.2em;color:var(--c-text)}`
+    css += `${P} .article-card__excerpt{font-size:var(--fs-sm);color:var(--c-text2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}`
+    css += `${P} .article-card__meta{font-size:var(--fs-sm);color:var(--c-text-m);margin-top:0.3em}`
+
+    switch (comp.article_card.style) {
+      case 'card':
+        css += `${P} .article-card{border:1px solid var(--c-border);border-radius:8px;overflow:hidden}${P} .article-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08)}${P} .article-card__body{padding:1em}${P} .article-card__thumbnail img{border-radius:0}`
+        break
+      case 'list':
+        css += `${P} .article-card{display:flex;gap:1em}${P} .article-card__thumbnail{width:200px;flex-shrink:0}`
+        break
+      default:
+        css += `${P} .article-card{border-bottom:1px solid var(--c-border);padding-bottom:1.5em}`
+    }
+
+    // Author bio
+    css += `${P} .author-bio{display:flex;gap:12px;align-items:center;padding:1.5em 0;margin-bottom:2em}`
+    css += `${P} .author-bio__name{font-weight:700}${P} .author-bio__description{font-size:var(--fs-sm);color:var(--c-text2);margin:0}`
+
+    // Footer
+    css += `${P} .footer{border-top:1px solid var(--c-border);padding:2em 0;text-align:center;color:var(--c-text-m);font-size:var(--fs-sm)}`
+    css += `${P} .footer a{color:var(--c-text-m)}${P} .footer a:hover{color:var(--c-link-h)}`
+
+    return css
   }, [])
 
   // Inject preview CSS via ref for reliable updates

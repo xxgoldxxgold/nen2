@@ -50,6 +50,7 @@ export default function DesignPage() {
   const [chatInput, setChatInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [username, setUsername] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -59,15 +60,26 @@ export default function DesignPage() {
       if (!session?.user) return
       const { data } = await db
         .from('users')
-        .select('blog_settings')
+        .select('blog_settings, username')
         .eq('id', session.user.id)
         .single()
+      if (data?.username) setUsername(data.username)
       if (data?.blog_settings) {
         setSettings(migrateOldSettings(data.blog_settings as Record<string, unknown>))
       }
     }
     fetchSettings()
   }, [])
+
+  const revalidateBlog = async () => {
+    try {
+      await fetch('/api/revalidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+      })
+    } catch {}
+  }
 
   const updateSettings = (path: string, value: unknown) => {
     setSettings(prev => {
@@ -150,6 +162,7 @@ export default function DesignPage() {
     }
     await db.from('users').update({ blog_settings: toSave }).eq('id', user.id)
     setSettings(toSave)
+    await revalidateBlog()
     setSaving(false)
   }
 
@@ -176,6 +189,7 @@ export default function DesignPage() {
         const { data: { session: s } } = await authClient.auth.getSession()
         if (s?.user) {
           await dbClient.from('users').update({ blog_settings: newSettings }).eq('id', s.user.id)
+          await revalidateBlog()
         }
       }
       setChatMessages(prev => [...prev, {

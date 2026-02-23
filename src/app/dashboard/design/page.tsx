@@ -287,23 +287,28 @@ export default function DesignPage() {
     setGeneratingHeader(false)
   }
 
+  const saveSettingsToServer = async (s: BlogTheme): Promise<boolean> => {
+    const res = await fetch('/api/save-blog-settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ settings: s }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Unknown error' }))
+      console.error('Save failed:', err.error)
+      return false
+    }
+    const result = await res.json()
+    if (result.settings) setSettings(result.settings)
+    return true
+  }
+
   const saveSettings = async () => {
     setSaving(true)
-    const auth = createClient()
-    const db = createDataClient()
-    const { data: { session } } = await auth.auth.getSession()
-    if (!session?.user) { setSaving(false); return }
-    const user = session.user
-
-    const toSave = {
-      ...settings,
-      css: { inline: generateInlineCSS(settings) },
-      font_preload: generateFontPreloads(settings),
+    const ok = await saveSettingsToServer(settings)
+    if (!ok) {
+      setChatMessages(prev => [...prev, { role: 'ai', content: '保存に失敗しました。ページを再読み込みしてお試しください。' }])
     }
-    await db.from('users').update({ blog_settings: toSave }).eq('id', user.id)
-    setSettings(toSave)
-    // Revalidate public blog pages so changes appear immediately
-    await fetch('/api/revalidate', { method: 'POST' }).catch(() => {})
     setSaving(false)
   }
 
@@ -324,15 +329,8 @@ export default function DesignPage() {
       if (data.settings && Object.keys(data.settings).length > 0) {
         const newSettings = data.settings as BlogTheme
         setSettings(newSettings)
-        // Auto-save to DB
-        const authClient = createClient()
-        const dbClient = createDataClient()
-        const { data: { session: s } } = await authClient.auth.getSession()
-        if (s?.user) {
-          await dbClient.from('users').update({ blog_settings: newSettings }).eq('id', s.user.id)
-          // Revalidate public blog pages
-          await fetch('/api/revalidate', { method: 'POST' }).catch(() => {})
-        }
+        // Auto-save to DB via server API (generates css.inline + revalidates)
+        await saveSettingsToServer(newSettings)
       }
       setChatMessages(prev => [...prev, {
         role: 'ai',

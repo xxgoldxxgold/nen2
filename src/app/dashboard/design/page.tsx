@@ -50,10 +50,13 @@ export default function DesignPage() {
   const [chatInput, setChatInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle')
   const [headerImageUrl, setHeaderImageUrl] = useState('')
   const [generatingHeader, setGeneratingHeader] = useState(false)
   const [displayName, setDisplayName] = useState('')
   const [username, setUsername] = useState('')
+  const initialLoadRef = useRef(true)
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -77,6 +80,8 @@ export default function DesignPage() {
           }
         }
       }
+      // Mark initial load complete so auto-save doesn't fire for fetched data
+      setTimeout(() => { initialLoadRef.current = false }, 100)
     }
     fetchSettings()
   }, [])
@@ -91,6 +96,21 @@ export default function DesignPage() {
       return result
     })
   }
+
+  // Debounced auto-save: saves 1.5s after last settings change
+  useEffect(() => {
+    if (initialLoadRef.current) return
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
+    autoSaveTimerRef.current = setTimeout(async () => {
+      setSaving(true)
+      const ok = await saveSettingsToServer(settings)
+      setSaveStatus(ok ? 'saved' : 'error')
+      setSaving(false)
+      if (ok) setTimeout(() => setSaveStatus('idle'), 2000)
+    }, 1500)
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings])
 
   // Build preview CSS: generate theme CSS scoped to #tp for full isolation
   const previewStyleRef = useRef<HTMLStyleElement | null>(null)
@@ -298,18 +318,16 @@ export default function DesignPage() {
       console.error('Save failed:', err.error)
       return false
     }
-    const result = await res.json()
-    if (result.settings) setSettings(result.settings)
+    await res.json()
     return true
   }
 
   const saveSettings = async () => {
     setSaving(true)
     const ok = await saveSettingsToServer(settings)
-    if (!ok) {
-      setChatMessages(prev => [...prev, { role: 'ai', content: '保存に失敗しました。ページを再読み込みしてお試しください。' }])
-    }
+    setSaveStatus(ok ? 'saved' : 'error')
     setSaving(false)
+    if (ok) setTimeout(() => setSaveStatus('idle'), 2000)
   }
 
   const handleAIChat = async () => {
@@ -328,7 +346,10 @@ export default function DesignPage() {
       const data = await res.json()
       if (data.settings && Object.keys(data.settings).length > 0) {
         const newSettings = data.settings as BlogTheme
+        // Skip auto-save effect for this programmatic setSettings
+        initialLoadRef.current = true
         setSettings(newSettings)
+        setTimeout(() => { initialLoadRef.current = false }, 100)
         // Auto-save to DB via server API (generates css.inline + revalidates)
         await saveSettingsToServer(newSettings)
       }
@@ -357,13 +378,24 @@ export default function DesignPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">ブログデザイン</h1>
-        <button
-          onClick={saveSettings}
-          disabled={saving}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {saving ? '保存中...' : 'デザインを保存'}
-        </button>
+        <div className="flex items-center gap-3">
+          {saveStatus === 'saved' && (
+            <span className="text-sm text-green-600 dark:text-green-400">保存しました</span>
+          )}
+          {saveStatus === 'error' && (
+            <span className="text-sm text-red-600 dark:text-red-400">保存に失敗しました</span>
+          )}
+          {saving && (
+            <span className="text-sm text-gray-500">自動保存中...</span>
+          )}
+          <button
+            onClick={saveSettings}
+            disabled={saving}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {saving ? '保存中...' : 'デザインを保存'}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

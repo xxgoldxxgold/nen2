@@ -83,14 +83,8 @@ export default async function UserBlogPage({ params }: Props) {
 
   return (
     <BlogThemeWrapper blogSettings={user.blog_settings || {}}>
-      <header className="header">
-        <div className="header-inner">
-          <Link href={`/${username}`} className="logo">{user.display_name}のブログ</Link>
-        </div>
-      </header>
-
-      {(user.blog_settings as any)?.images?.header_image_url && (
-        <div className="blog-header-image">
+      {(user.blog_settings as any)?.images?.header_image_url ? (
+        <div className="blog-header-image" style={{ position: 'relative' }}>
           <Image
             src={(user.blog_settings as any).images.header_image_url}
             alt={`${user.display_name}のブログ`}
@@ -98,10 +92,32 @@ export default async function UserBlogPage({ params }: Props) {
             height={400}
             sizes="100vw"
             priority
-            style={{ width: '100%', height: 'auto' }}
+            style={{ width: '100%', height: 'auto', display: 'block' }}
           />
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.45) 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Link
+              href={`/${username}`}
+              className="logo"
+              style={{ color: '#fff', fontSize: '2em', textDecoration: 'none', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+            >
+              {user.display_name}のブログ
+            </Link>
+          </div>
           {(user.blog_settings as any)?.images?.header_photo_credit && (
-            <div style={{ textAlign: 'right', padding: '4px 12px', fontSize: '11px', color: 'var(--c-text-m, #999)' }}>
+            <div style={{
+              position: 'absolute',
+              bottom: 4,
+              right: 12,
+              fontSize: '11px',
+              color: 'rgba(255,255,255,0.7)',
+            }}>
               Photo by{' '}
               <a
                 href={(user.blog_settings as any).images.header_photo_credit.pexels_url}
@@ -118,6 +134,12 @@ export default async function UserBlogPage({ params }: Props) {
             </div>
           )}
         </div>
+      ) : (
+        <header className="header">
+          <div className="header-inner">
+            <Link href={`/${username}`} className="logo">{user.display_name}のブログ</Link>
+          </div>
+        </header>
       )}
 
       <div className="container" style={{ paddingTop: '2em', paddingBottom: '2em' }}>

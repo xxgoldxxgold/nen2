@@ -100,6 +100,23 @@ export default async function UserBlogPage({ params }: Props) {
             priority
             style={{ width: '100%', height: 'auto' }}
           />
+          {(user.blog_settings as any)?.images?.header_photo_credit && (
+            <div style={{ textAlign: 'right', padding: '4px 12px', fontSize: '11px', color: 'var(--c-text-m, #999)' }}>
+              Photo by{' '}
+              <a
+                href={(user.blog_settings as any).images.header_photo_credit.pexels_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'inherit' }}
+              >
+                {(user.blog_settings as any).images.header_photo_credit.photographer}
+              </a>
+              {' '}on{' '}
+              <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>
+                Pexels
+              </a>
+            </div>
+          )}
         </div>
       )}
 

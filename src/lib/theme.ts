@@ -53,6 +53,10 @@ export interface BlogTheme {
   images?: {
     header_svg?: string
     header_image_url?: string
+    header_photo_credit?: {
+      photographer: string
+      pexels_url: string
+    }
   }
   css: {
     inline: string

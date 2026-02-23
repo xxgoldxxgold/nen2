@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { createDataClient } from '@/lib/supabase/data-client'
-import { Send, Palette, Type, Layout, Sparkles, Eye, ImageIcon } from 'lucide-react'
+import { Send, Palette, Type, Layout, Sparkles, Eye, ImageIcon, Upload } from 'lucide-react'
+import { useRef } from 'react'
 import type { BlogTheme } from '@/lib/theme'
 import { DEFAULT_THEME, deepMerge, generateInlineCSS, generateFontPreloads, migrateOldSettings } from '@/lib/theme'
 
@@ -185,6 +186,79 @@ export default function DesignPage() {
     setGeneratingHeader(false)
   }
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleSetHeaderPhoto = async (query: string) => {
+    setGeneratingHeader(true)
+    setChatMessages(prev => [...prev, { role: 'ai', content: `写真を検索中: "${query}"...` }])
+    try {
+      const res = await fetch('/api/ai/set-header-photo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setChatMessages(prev => [...prev, { role: 'ai', content: `写真設定エラー: ${data.error}` }])
+        setGeneratingHeader(false)
+        return
+      }
+      if (data.imageUrl) {
+        setHeaderImageUrl(data.imageUrl)
+        setSettings(prev => ({
+          ...prev,
+          images: {
+            ...prev.images,
+            header_image_url: data.imageUrl,
+            header_svg: undefined,
+            header_photo_credit: data.credit,
+          },
+        }))
+        setChatMessages(prev => [...prev, { role: 'ai', content: data.message || '写真を設定しました！' }])
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setChatMessages(prev => [...prev, { role: 'ai', content: `写真設定エラー: ${msg}` }])
+    }
+    setGeneratingHeader(false)
+  }
+
+  const handleUploadHeaderImage = async (file: File) => {
+    setGeneratingHeader(true)
+    setChatMessages(prev => [...prev, { role: 'ai', content: 'ヘッダー画像をアップロード中...' }])
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/upload-header-image', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setChatMessages(prev => [...prev, { role: 'ai', content: `アップロードエラー: ${data.error}` }])
+        setGeneratingHeader(false)
+        return
+      }
+      if (data.imageUrl) {
+        setHeaderImageUrl(data.imageUrl)
+        setSettings(prev => ({
+          ...prev,
+          images: {
+            ...prev.images,
+            header_image_url: data.imageUrl,
+            header_svg: undefined,
+            header_photo_credit: undefined,
+          },
+        }))
+        setChatMessages(prev => [...prev, { role: 'ai', content: data.message || 'アップロードしました！' }])
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setChatMessages(prev => [...prev, { role: 'ai', content: `アップロードエラー: ${msg}` }])
+    }
+    setGeneratingHeader(false)
+  }
+
   const saveSettings = async () => {
     setSaving(true)
     const auth = createClient()
@@ -237,8 +311,10 @@ export default function DesignPage() {
         content: data.message || 'デザインを更新しました（自動保存済み）',
       }])
 
-      // Auto-trigger header image generation if AI recommends it
-      if (data.generate_header_image) {
+      // Auto-trigger header photo search or image generation
+      if (data.header_photo_query) {
+        handleSetHeaderPhoto(data.header_photo_query)
+      } else if (data.generate_header_image) {
         const newColors = (data.settings as BlogTheme)?.colors || settings.colors
         handleGenerateHeaderImage({ style: data.header_image_style, colors: newColors })
       }
@@ -426,15 +502,36 @@ export default function DesignPage() {
                 ヘッダー画像未設定
               </div>
             )}
-            <button
-              onClick={() => handleGenerateHeaderImage()}
-              disabled={generatingHeader}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-purple-50 px-3 py-2.5 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 dark:bg-purple-900/20 dark:text-purple-400"
-            >
-              <Sparkles className={`h-4 w-4 ${generatingHeader ? 'animate-spin' : ''}`} />
-              {generatingHeader ? '生成中...' : headerImageUrl ? 'ヘッダー画像を再生成' : 'ヘッダー画像を生成'}
-            </button>
-            <p className="mt-2 text-xs text-gray-400">テーマカラーに合わせた抽象的なヘッダー画像をAIが生成します</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleGenerateHeaderImage()}
+                disabled={generatingHeader}
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-50 px-3 py-2.5 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 dark:bg-purple-900/20 dark:text-purple-400"
+              >
+                <Sparkles className={`h-4 w-4 ${generatingHeader ? 'animate-spin' : ''}`} />
+                {generatingHeader ? '処理中...' : 'AI生成'}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleUploadHeaderImage(file)
+                  e.target.value = ''
+                }}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={generatingHeader}
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300"
+              >
+                <Upload className="h-4 w-4" />
+                写真アップロード
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-400">AI生成（抽象アート）またはチャットで「〇〇の写真にして」で実写写真を設定。手動アップロードも可能（5MB以下）</p>
           </div>
         </div>
 

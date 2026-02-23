@@ -147,6 +147,7 @@ function createStorageClient() {
 export async function uploadImageToStorage(
   pngBuffer: Buffer,
   storagePath: string,
+  contentType: string = 'image/png',
 ): Promise<string> {
   const db = createStorageClient()
 
@@ -157,7 +158,7 @@ export async function uploadImageToStorage(
   const { error } = await db.storage
     .from('blog-images')
     .upload(storagePath, uploadData, {
-      contentType: 'image/png',
+      contentType,
       upsert: true,
     })
 

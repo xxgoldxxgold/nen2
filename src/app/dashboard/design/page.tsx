@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { createDataClient } from '@/lib/supabase/data-client'
 import { Send, Palette, Type, Layout, Sparkles, Eye, ImageIcon, Upload } from 'lucide-react'
-import { useRef } from 'react'
 import type { BlogTheme } from '@/lib/theme'
 import { DEFAULT_THEME, deepMerge, generateInlineCSS, generateFontPreloads, migrateOldSettings } from '@/lib/theme'
 
@@ -93,62 +92,89 @@ export default function DesignPage() {
     })
   }
 
-  // Parse CSS into top-level blocks with proper brace matching
-  const parseCSSBlocks = (css: string) => {
-    const blocks: Array<{ selector: string; body: string }> = []
-    let i = 0
-    while (i < css.length) {
-      const open = css.indexOf('{', i)
-      if (open === -1) break
-      const selector = css.substring(i, open)
-      let depth = 1
-      let j = open + 1
-      while (j < css.length && depth > 0) {
-        if (css[j] === '{') depth++
-        if (css[j] === '}') depth--
-        j++
-      }
-      blocks.push({ selector, body: css.substring(open + 1, j - 1) })
-      i = j
+  // Build preview CSS: generate theme CSS scoped to #tp for full isolation
+  const previewStyleRef = useRef<HTMLStyleElement | null>(null)
+
+  const buildPreviewCSS = useCallback((s: BlogTheme): string => {
+    const c = s.colors
+    const ty = s.typography
+    const l = s.layout
+    const comp = s.components
+    const P = '#tp'
+
+    let css = ''
+
+    // Font faces (global, no scope needed)
+    const fontFaces = generateInlineCSS(s).match(/@font-face\{[^}]+\}/g) || []
+    css += fontFaces.join('')
+
+    // CSS variables + body styles on #tp
+    const effectiveMaxWidth = l.type === 'two_column' ? '1100px' : l.max_width
+    css += `${P}{`
+    css += `--c-primary:${c.primary};--c-bg:${c.background};--c-surface:${c.surface};--c-text:${c.text};--c-text2:${c.text_secondary};--c-text-m:${c.text_muted};--c-border:${c.border};--c-link:${c.link};--c-link-h:${c.link_hover};--c-code-bg:${c.code_bg};--c-code:${c.code_text};`
+    css += `--f-head:${ty.font_family.heading};--f-body:${ty.font_family.body};--f-code:${ty.font_family.code};`
+    css += `--fs-base:${ty.font_size.base};--fs-sm:${ty.font_size.small};--fs-h1:${ty.font_size.h1};--fs-h2:${ty.font_size.h2};--fs-h3:${ty.font_size.h3};`
+    css += `--lh:${ty.line_height.body};--lh-head:${ty.line_height.heading};--mw:${effectiveMaxWidth};--pad:24px;`
+    css += `font-family:var(--f-body);line-height:var(--lh);color:var(--c-text);background:var(--c-bg);-webkit-font-smoothing:antialiased`
+    css += `}`
+
+    // Element styles — all prefixed with #tp
+    css += `${P} *,${P} *::before,${P} *::after{box-sizing:border-box}`
+    css += `${P} img{max-width:100%;height:auto;display:block}`
+    css += `${P} a{color:var(--c-link);text-decoration:underline}${P} a:hover{color:var(--c-link-h)}`
+    css += `${P} .container{max-width:var(--mw);margin:0 auto;padding:0 var(--pad)}`
+
+    // Header
+    css += `${P} .header{border-bottom:1px solid var(--c-border)}`
+    css += `${P} .header-inner{max-width:var(--mw);margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1em var(--pad)}`
+    if (l.header.style === 'centered') css += `${P} .header-inner{flex-direction:column;gap:0.5em;text-align:center}`
+    else if (l.header.style === 'minimal') css += `${P} .logo{font-size:0.95em}`
+    css += `${P} .logo{font-family:var(--f-head);font-weight:700;color:var(--c-text);text-decoration:none;font-size:1.2em}`
+    css += `${P} .nav a{color:var(--c-text2);margin-left:1.5em;text-decoration:none;font-size:var(--fs-sm)}${P} .nav a:hover{color:var(--c-link-h)}`
+
+    // Two-column layout
+    if (l.type === 'two_column') {
+      css += `${P} .two-col{display:grid;grid-template-columns:1fr 280px;gap:2.5em;align-items:start}`
+      css += `${P} .two-col__main{min-width:0}`
+      css += `${P} .sidebar-section{background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;padding:1.2em;margin-bottom:1.2em}`
+      css += `${P} .sidebar-section h3{font-size:var(--fs-sm);font-weight:700;margin:0 0 0.8em;color:var(--c-text)}`
     }
-    return blocks
-  }
 
-  // Scope preview CSS so it doesn't leak into the dashboard
-  const previewCSS = useMemo(() => {
-    const raw = generateInlineCSS(settings)
-    const blocks = parseCSSBlocks(raw)
-    const P = '.theme-preview'
+    // Article list & cards
+    css += `${P} .article-list{display:flex;flex-direction:column;gap:1.5em}`
+    css += `${P} .article-card{text-decoration:none;color:inherit;display:block;transition:box-shadow 0.2s}`
+    css += `${P} .article-card__thumbnail img{aspect-ratio:16/9;object-fit:cover;width:100%;border-radius:8px}`
+    css += `${P} .article-card__title{font-size:1.1em;font-weight:700;margin:0.5em 0;color:var(--c-text)}`
+    css += `${P} .article-card__excerpt{font-size:var(--fs-sm);color:var(--c-text2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}`
+    css += `${P} .article-card__meta{font-size:var(--fs-sm);color:var(--c-text-m);margin-top:0.3em}`
 
-    return blocks.map(({ selector, body }) => {
-      const s = selector.trim()
-      // Skip dark mode — preview always uses light mode
-      if (s.includes('prefers-color-scheme:dark')) return ''
-      // @font-face — keep global
-      if (s.startsWith('@font-face')) return `${s}{${body}}`
-      // @media — scope inner selectors
-      if (s.startsWith('@media')) {
-        const inner = parseCSSBlocks(body)
-        const scopedInner = inner.map(({ selector: iSel, body: iBody }) => {
-          const is2 = iSel.trim()
-          const scoped = is2.split(',').map(p => `${P} ${p.trim()}`).join(',')
-          return `${scoped}{${iBody}}`
-        }).join('')
-        return `${s}{${scopedInner}}`
-      }
-      // * reset — scope to preview
-      if (s === '*,*::before,*::after') return `${P} ${s}{${body}}`
-      // :root / body → .theme-preview
-      if (s === ':root' || s === 'body') return `${P}{${body}}`
-      // Comma-separated or single selectors
-      const scoped = s.split(',').map(p => {
-        const t = p.trim()
-        if (t === ':root' || t === 'body') return P
-        return `${P} ${t}`
-      }).join(',')
-      return `${scoped}{${body}}`
-    }).join('')
-  }, [settings])
+    switch (comp.article_card.style) {
+      case 'card':
+        css += `${P} .article-card{border:1px solid var(--c-border);border-radius:8px;overflow:hidden}${P} .article-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08)}${P} .article-card__body{padding:1em}${P} .article-card__thumbnail img{border-radius:0}`
+        break
+      case 'list':
+        css += `${P} .article-card{display:flex;gap:1em}${P} .article-card__thumbnail{width:200px;flex-shrink:0}`
+        break
+      default:
+        css += `${P} .article-card{border-bottom:1px solid var(--c-border);padding-bottom:1.5em}`
+    }
+
+    // Footer
+    css += `${P} .footer{border-top:1px solid var(--c-border);padding:2em 0;text-align:center;color:var(--c-text-m);font-size:var(--fs-sm)}`
+
+    // Author bio
+    css += `${P} .author-bio{display:flex;gap:12px;align-items:center;padding:1.5em 0;margin-bottom:2em}`
+    css += `${P} .author-bio__name{font-weight:700}${P} .author-bio__description{font-size:var(--fs-sm);color:var(--c-text2);margin:0}`
+
+    return css
+  }, [])
+
+  // Inject preview CSS via ref for reliable updates
+  useEffect(() => {
+    if (previewStyleRef.current) {
+      previewStyleRef.current.textContent = buildPreviewCSS(settings)
+    }
+  }, [settings, buildPreviewCSS])
 
   const handleGenerateHeaderImage = async (opts?: { style?: string; colors?: BlogTheme['colors'] }) => {
     setGeneratingHeader(true)
@@ -596,14 +622,21 @@ export default function DesignPage() {
               <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">プレビュー</h2>
             </div>
             <div className="p-2">
-              <style dangerouslySetInnerHTML={{ __html: previewCSS }} />
-              <div className="theme-preview overflow-hidden rounded-lg border border-gray-200" style={{ fontSize: '12px' }}>
+              <style ref={previewStyleRef} />
+              <div id="tp" className="overflow-hidden rounded-lg" style={{ fontSize: '12px' }}>
                 <div className="header">
                   <div className="header-inner" style={{ padding: '0.7em 1em' }}>
-                    <span className="logo" style={{ fontSize: '1em' }}>My Blog</span>
+                    <span className="logo" style={{ fontSize: '1em' }}>
+                      {displayName ? `${displayName}のブログ` : 'My Blog'}
+                    </span>
                     <nav className="nav"><a href="#" onClick={e => e.preventDefault()}>ホーム</a></nav>
                   </div>
                 </div>
+                {headerImageUrl && (
+                  <div style={{ maxHeight: '80px', overflow: 'hidden' }}>
+                    <img src={headerImageUrl} alt="" style={{ width: '100%', height: '80px', objectFit: 'cover' }} />
+                  </div>
+                )}
                 <div className="container" style={{ padding: '1em' }}>
                   {settings.layout.type === 'two_column' ? (
                     <div className="two-col">
@@ -612,15 +645,15 @@ export default function DesignPage() {
                           {['サンプル記事タイトル', '2番目の記事です'].map((title, i) => (
                             <div key={i} className="article-card">
                               <div className="article-card__thumbnail">
-                                <div style={{
-                                  aspectRatio: '16/9',
-                                  background: `linear-gradient(135deg, ${settings.colors.primary}40, ${settings.colors.primary}10)`,
-                                  borderRadius: '8px',
-                                }} />
+                                <img
+                                  src={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="225"><rect fill="${settings.colors.primary}20" width="400" height="225"/><rect fill="${settings.colors.primary}15" x="40" y="30" width="320" height="165" rx="8"/></svg>`)}`}
+                                  alt=""
+                                  style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '8px' }}
+                                />
                               </div>
                               <div className="article-card__body">
                                 <div className="article-card__title">{title}</div>
-                                <p className="article-card__excerpt">プレビュー用のサンプルテキストです。</p>
+                                <p className="article-card__excerpt">プレビュー用のサンプルテキストです。記事の概要がここに表示されます。</p>
                                 <div className="article-card__meta">2025年1月15日</div>
                               </div>
                             </div>
@@ -635,24 +668,33 @@ export default function DesignPage() {
                       </aside>
                     </div>
                   ) : (
-                    <div className="article-list">
-                      {['サンプル記事タイトル', '2番目の記事です'].map((title, i) => (
-                        <div key={i} className="article-card">
-                          <div className="article-card__thumbnail">
-                            <div style={{
-                              aspectRatio: '16/9',
-                              background: `linear-gradient(135deg, ${settings.colors.primary}40, ${settings.colors.primary}10)`,
-                              borderRadius: '8px',
-                            }} />
-                          </div>
-                          <div className="article-card__body">
-                            <div className="article-card__title">{title}</div>
-                            <p className="article-card__excerpt">プレビュー用のサンプルテキストです。</p>
-                            <div className="article-card__meta">2025年1月15日</div>
-                          </div>
+                    <>
+                      <div className="author-bio">
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: `${settings.colors.primary}30`, flexShrink: 0 }} />
+                        <div>
+                          <div className="author-bio__name" style={{ fontSize: '0.9em' }}>{displayName || 'ユーザー名'}</div>
+                          <p className="author-bio__description">ブログの著者紹介</p>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                      <div className="article-list">
+                        {['サンプル記事タイトル', '2番目の記事です'].map((title, i) => (
+                          <div key={i} className="article-card">
+                            <div className="article-card__thumbnail">
+                              <img
+                                src={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="225"><rect fill="${settings.colors.primary}20" width="400" height="225"/><rect fill="${settings.colors.primary}15" x="40" y="30" width="320" height="165" rx="8"/></svg>`)}`}
+                                alt=""
+                                style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '8px' }}
+                              />
+                            </div>
+                            <div className="article-card__body">
+                              <div className="article-card__title">{title}</div>
+                              <p className="article-card__excerpt">プレビュー用のサンプルテキストです。記事の概要がここに表示されます。</p>
+                              <div className="article-card__meta">2025年1月15日</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
                 <div className="footer" style={{ padding: '0.7em 0', fontSize: '0.8em' }}>

@@ -117,13 +117,13 @@ export default function DesignPage() {
   // Scope preview CSS so it doesn't leak into the dashboard
   const previewCSS = useMemo(() => {
     const raw = generateInlineCSS(settings)
-    // Remove dark mode media query
-    const css = raw.replace(/@media\(prefers-color-scheme:dark\)\{[^}]*\{[^}]*\}[^}]*\}/g, '')
-    const blocks = parseCSSBlocks(css)
+    const blocks = parseCSSBlocks(raw)
     const P = '.theme-preview'
 
     return blocks.map(({ selector, body }) => {
       const s = selector.trim()
+      // Skip dark mode — preview always uses light mode
+      if (s.includes('prefers-color-scheme:dark')) return ''
       // @font-face — keep global
       if (s.startsWith('@font-face')) return `${s}{${body}}`
       // @media — scope inner selectors
@@ -136,6 +136,8 @@ export default function DesignPage() {
         }).join('')
         return `${s}{${scopedInner}}`
       }
+      // * reset — scope to preview
+      if (s === '*,*::before,*::after') return `${P} ${s}{${body}}`
       // :root / body → .theme-preview
       if (s === ':root' || s === 'body') return `${P}{${body}}`
       // Comma-separated or single selectors

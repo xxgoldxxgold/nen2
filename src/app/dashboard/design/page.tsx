@@ -277,7 +277,7 @@ export default function DesignPage() {
     await db.from('users').update({ blog_settings: toSave }).eq('id', user.id)
     setSettings(toSave)
     // Revalidate public blog pages so changes appear immediately
-    fetch('/api/revalidate', { method: 'POST' }).catch(() => {})
+    await fetch('/api/revalidate', { method: 'POST' }).catch(() => {})
     setSaving(false)
   }
 
@@ -305,7 +305,7 @@ export default function DesignPage() {
         if (s?.user) {
           await dbClient.from('users').update({ blog_settings: newSettings }).eq('id', s.user.id)
           // Revalidate public blog pages
-          fetch('/api/revalidate', { method: 'POST' }).catch(() => {})
+          await fetch('/api/revalidate', { method: 'POST' }).catch(() => {})
         }
       }
       setChatMessages(prev => [...prev, {

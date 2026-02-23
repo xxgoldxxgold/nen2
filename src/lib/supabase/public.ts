@@ -3,10 +3,15 @@ import { createClient } from '@supabase/supabase-js'
 // Cookie-free Supabase client for public (unauthenticated) pages.
 // Using this instead of the SSR client avoids calling cookies(),
 // which allows Next.js to statically generate / ISR these pages.
-// Data caching is handled at the page level via `export const revalidate`.
+// Force no-store to ensure revalidatePath always gets fresh data.
 export const supabasePublic = createClient(
   process.env.NEXT_PUBLIC_NEN2_DB_URL!,
   process.env.NEXT_PUBLIC_NEN2_DB_ANON_KEY!,
+  {
+    global: {
+      fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }),
+    },
+  },
 )
 
 export async function getPublicUser(username: string) {

@@ -2,25 +2,26 @@ import { callClaude } from '@/lib/ai'
 import sharp from 'sharp'
 import { createClient } from '@supabase/supabase-js'
 
-const SVG_SYSTEM_PROMPT = `You are a professional SVG illustrator specializing in beautiful, detailed vector art for web headers and banners.
+const SVG_SYSTEM_PROMPT = `You are a professional graphic designer creating premium blog header banners using SVG.
 
 CRITICAL RULES:
 - Output ONLY the raw SVG markup. No explanation, no markdown code blocks, no backticks.
 - Allowed elements: svg, rect, circle, ellipse, path, line, polygon, polyline, g, defs, linearGradient, radialGradient, stop, text, tspan, clipPath
-- NEVER use: image, foreignObject, filter, feGaussianBlur, use, symbol, mask, pattern, animate, script, style, feTurbulence
-- Always include xmlns="http://www.w3.org/2000/svg"
-- Always set explicit width and height attributes on the svg element
-- Always include viewBox attribute
+- NEVER use: image, foreignObject, filter, use, symbol, mask, pattern, animate, script, style
+- Always include xmlns="http://www.w3.org/2000/svg", viewBox, width, height
 - Text must use font-family="sans-serif"
 
-ILLUSTRATION STYLE:
-- Create DETAILED, layered flat vector illustrations — NOT childish or simplistic
-- Use complex <path> elements with cubic bezier curves (C commands) for organic, natural shapes
-- Build scenes with multiple overlapping layers at different opacities for depth
-- Use 3-5 gradient definitions for sky, water, ground, and accent elements
-- Create silhouettes and detailed outlines, not just basic circles and rectangles
-- Aim for the quality of professional travel website hero illustrations
-- SVG should be 4-8KB in size — use enough detail to look polished`
+DESIGN PHILOSOPHY — ABSTRACT MOOD ART, NOT ILLUSTRATION:
+- NEVER try to draw recognizable objects like trees, flowers, or buildings — they look childish in SVG
+- Instead, create ABSTRACT, ATMOSPHERIC compositions using:
+  * Rich multi-stop gradients (5-8 stops) for dramatic sky/mood effects
+  * Flowing bezier curve paths that suggest waves, horizons, hills, or clouds abstractly
+  * Layered translucent shapes at varying opacities (0.05 to 0.6) for depth and atmosphere
+  * Organic curved bands of color that flow across the banner
+- Think of Dribbble/Behance hero banners: sophisticated gradient art, not clip art
+- Use 4-6 gradient definitions with harmonious color transitions
+- Create at least 8-12 overlapping path layers for richness
+- The result should look like premium wallpaper art or a polished app header`
 
 export async function generateHeaderSVG(
   theme: { primary: string; background: string; surface: string; text: string },
@@ -28,29 +29,30 @@ export async function generateHeaderSVG(
   style?: string,
 ): Promise<string> {
   const styleDesc = style
-    ? `Theme: ${style}
-Create a rich, detailed scene that captures this mood. Use layered path elements to build recognizable shapes (not abstract blobs).
-For example, if the theme involves nature: draw actual tree silhouettes, mountain ridges, wave patterns, flower shapes, etc. using detailed path curves.`
-    : `Create an elegant decorative banner with layered geometric and organic patterns.`
+    ? `Mood/atmosphere: ${style}
+Evoke this mood through COLOR CHOICES and ABSTRACT FLOWING SHAPES only. Do NOT draw literal objects.
+For example: "Hawaii" = warm coral-to-turquoise gradients with flowing wave-like curves; "Forest" = deep green layered gradient with organic curved shapes suggesting canopy.`
+    : `Create an elegant, sophisticated gradient composition.`
 
   const prompt = `Create a blog header banner SVG: width="1200" height="400" viewBox="0 0 1200 400".
 
-Color palette to use:
+Base palette:
 - Primary: ${theme.primary}
 - Background: ${theme.background}
 - Surface: ${theme.surface}
 - Text: ${theme.text}
-- Also derive 2-3 complementary colors from the primary for variety
+Derive 3-4 additional harmonious colors to create rich gradients.
 
 ${styleDesc}
 
-Composition requirements:
-- Full-width scenic illustration as the background
-- Multiple layers: background gradient → mid-ground elements → foreground details
-- Use path elements with bezier curves for organic, natural-looking shapes
-- Add depth with overlapping elements at varying opacities (0.1 to 0.8)
-- Blog name "${blogName}" centered, 48-56px, font-family="sans-serif", fill="${theme.text}" with a subtle semi-transparent background rect behind it for readability
-- The text should be clearly readable against the illustration
+Composition:
+- Full-width abstract gradient art (NOT illustration, NOT clip art)
+- Start with a dramatic multi-stop gradient background
+- Add 8-12 overlapping flowing path shapes with bezier curves (C/S commands) at various opacities
+- Paths should create smooth, organic wave-like or cloud-like bands of color flowing horizontally
+- Layer translucent shapes to create depth and atmospheric feel
+- Blog name "${blogName}" centered vertically and horizontally, 48px, font-family="sans-serif", fill with good contrast color
+- Add a subtle semi-transparent rounded rect (rx="12") behind the text for readability
 - IMPORTANT: width="1200" height="400" on the svg element`
 
   // Retry once if SVG extraction fails

@@ -140,10 +140,47 @@ export function generateInlineCSS(theme: SimpleTheme): string {
   css += `.footer a{color:var(--c-text-m)}.footer a:hover{color:var(--accent)}`
   css += `.footer img{display:inline;vertical-align:middle}`
 
-  // 13. Responsive
+  // 13. Follow button
+  css += `.follow-section{display:flex;align-items:center;gap:12px;flex-wrap:wrap}`
+  css += `.follow-counts{display:flex;gap:12px;font-size:0.875rem;color:var(--c-text2)}`
+  css += `.follow-counts strong{color:var(--c-text);margin-right:2px}`
+  css += `.follow-btn{padding:6px 16px;border-radius:20px;font-size:0.875rem;cursor:pointer;border:1.5px solid var(--accent);background:var(--accent);color:#fff;transition:all 0.2s;font-family:var(--f-body)}`
+  css += `.follow-btn:hover{opacity:0.85}.follow-btn:disabled{opacity:0.5;cursor:default}`
+  css += `.follow-btn--following{background:transparent;color:var(--accent)}`
+  css += `.follow-btn--following:hover{background:rgba(220,50,50,0.08);border-color:#d44;color:#d44}`
+
+  // 14. Like button
+  css += `.like-btn{display:inline-flex;align-items:center;gap:4px;padding:8px 14px;border-radius:20px;border:1px solid var(--c-border);background:transparent;cursor:pointer;font-size:0.95rem;color:var(--c-text2);transition:all 0.2s;font-family:var(--f-body)}`
+  css += `.like-btn:hover{border-color:var(--accent);color:var(--accent)}.like-btn:disabled{opacity:0.5}`
+  css += `.like-btn--liked{color:#e0245e;border-color:#e0245e}`
+  css += `.like-btn--liked .like-btn__icon{transform:scale(1.15)}`
+  css += `.like-btn__icon{font-size:1.15em;transition:transform 0.2s}.like-btn__count{font-size:0.875rem}`
+
+  // 15. Comment section
+  css += `.comment-section{margin-top:2em;padding-top:1.5em;border-top:1px solid var(--c-border)}`
+  css += `.comment-section__title{font-family:var(--f-head);font-size:1.1rem;font-weight:700;margin:0 0 1em}`
+  css += `.comment-list{display:flex;flex-direction:column;gap:0}`
+  css += `.comment{padding:1em 0;border-bottom:1px solid var(--c-border)}`
+  css += `.comment__header{display:flex;align-items:center;gap:8px;margin-bottom:0.5em;flex-wrap:wrap}`
+  css += `.comment__avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0}`
+  css += `.comment__avatar--placeholder{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font-size:0.75em;font-weight:700}`
+  css += `.comment__author{font-weight:700;font-size:0.875rem}`
+  css += `.comment__date{font-size:0.8rem;color:var(--c-text-m)}`
+  css += `.comment__delete{font-size:0.8rem;color:var(--c-text-m);background:none;border:none;cursor:pointer;margin-left:auto;padding:0}.comment__delete:hover{color:#d44}`
+  css += `.comment__body{margin:0;font-size:0.95rem;line-height:1.7;white-space:pre-wrap;word-break:break-word}`
+  css += `.comment-form{margin-top:1.5em}`
+  css += `.comment-form__input{width:100%;padding:10px 12px;border:1px solid var(--c-border);border-radius:8px;font-size:0.95rem;font-family:var(--f-body);line-height:1.6;resize:vertical;background:var(--c-bg);color:var(--c-text)}`
+  css += `.comment-form__input:focus{outline:none;border-color:var(--accent)}`
+  css += `.comment-form__footer{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}`
+  css += `.comment-form__count{font-size:0.8rem;color:var(--c-text-m)}`
+  css += `.comment-form__error{font-size:0.8rem;color:#d44}`
+  css += `.comment-form__submit{margin-left:auto;padding:6px 16px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:0.875rem;cursor:pointer;font-family:var(--f-body)}.comment-form__submit:hover{opacity:0.85}.comment-form__submit:disabled{opacity:0.4;cursor:default}`
+  css += `.comment-form__login{color:var(--c-text-m);font-size:0.875rem;text-align:center;padding:1em 0}.comment-form__login a{color:var(--accent)}`
+
+  // 16. Responsive
   css += `@media(max-width:768px){.container{padding:0 16px}.article__title{font-size:1.5em}.article__content h2{font-size:1.3em}.header-image{max-height:200px}}`
 
-  // 14. Dark mode
+  // 17. Dark mode
   css += `@media(prefers-color-scheme:dark){:root{--c-bg:#0f0f0f;--c-text:#e5e5e5;--c-text2:#a0a0a0;--c-text-m:#707070;--c-border:#2a2a2a}.article__content code{background:#2a2a2a;color:#e5e5e5}img{filter:brightness(.92)}}`
 
   return css

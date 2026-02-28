@@ -1,9 +1,10 @@
-import { getPublicProfile, getPublicPosts } from '@/lib/supabase/public'
+import { getPublicProfile, getPublicPosts, getPublicFollowCounts } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 import { formatDate } from '@/lib/utils'
+import FollowButton from '@/components/blog/FollowButton'
 
 export const revalidate = 3600
 export const dynamicParams = true
@@ -31,12 +32,15 @@ export default async function UserBlogPage({ params }: Props) {
   const profile = await getPublicProfile(decodedUsername)
   if (!profile) notFound()
 
-  const posts = await getPublicPosts(profile.id)
+  const [posts, followCounts] = await Promise.all([
+    getPublicPosts(profile.id),
+    getPublicFollowCounts(profile.id),
+  ])
 
   return (
     <div className="container" style={{ paddingTop: '2em', paddingBottom: '2em' }}>
       {/* Author info */}
-      <div className="author-bio" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0, marginBottom: '2em' }}>
+      <div className="author-bio" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0, marginBottom: '1em' }}>
         {profile.avatar_url ? (
           <Image src={profile.avatar_url} alt="" width={48} height={48} className="author-bio__avatar" />
         ) : (
@@ -54,6 +58,15 @@ export default async function UserBlogPage({ params }: Props) {
           <div className="author-bio__name">{profile.display_name}</div>
           {profile.bio && <p className="author-bio__description">{profile.bio}</p>}
         </div>
+      </div>
+
+      {/* Follow section */}
+      <div style={{ marginBottom: '2em' }}>
+        <FollowButton
+          userId={profile.id}
+          initialFollowerCount={followCounts.follower_count}
+          initialFollowingCount={followCounts.following_count}
+        />
       </div>
 
       {/* Post list */}

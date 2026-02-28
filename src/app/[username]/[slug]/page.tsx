@@ -1,4 +1,4 @@
-import { getPublicProfile, getPublicPost, getPublicPostTags } from '@/lib/supabase/public'
+import { getPublicProfile, getPublicPost, getPublicPostTags, getPublicLikeCount, getPublicComments, getPublicFollowCounts } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -6,6 +6,9 @@ import type { Metadata } from 'next'
 import { formatDate } from '@/lib/utils'
 import { estimateReadTime } from '@/lib/markdown'
 import ShareButtons from '@/components/ShareButtons'
+import LikeButton from '@/components/blog/LikeButton'
+import CommentSection from '@/components/blog/CommentSection'
+import FollowButton from '@/components/blog/FollowButton'
 
 export const revalidate = 3600
 export const dynamicParams = true
@@ -69,7 +72,12 @@ export default async function PostPage({ params }: Props) {
   const post = await getPublicPost(profile.id, decodedSlug)
   if (!post) notFound()
 
-  const tags = await getPublicPostTags(post.id)
+  const [tags, likeCount, comments, followCounts] = await Promise.all([
+    getPublicPostTags(post.id),
+    getPublicLikeCount(post.id),
+    getPublicComments(post.id),
+    getPublicFollowCounts(profile.id),
+  ])
   const plainText = post.content_html?.replace(/<[^>]*>/g, '') || ''
   const readTime = estimateReadTime(plainText)
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nen2.com'
@@ -128,7 +136,10 @@ export default async function PostPage({ params }: Props) {
         <div className="article__content" dangerouslySetInnerHTML={{ __html: post.content_html || '' }} />
       </article>
 
-      <ShareButtons url={pageUrl} title={post.title} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <ShareButtons url={pageUrl} title={post.title} />
+        <LikeButton articleId={post.id} initialLikeCount={likeCount} />
+      </div>
 
       {/* Author bio */}
       <div className="author-bio">
@@ -145,11 +156,19 @@ export default async function PostPage({ params }: Props) {
             {profile.display_name?.charAt(0) || '?'}
           </div>
         )}
-        <div>
+        <div style={{ flex: 1 }}>
           <div className="author-bio__name">{profile.display_name}</div>
           {profile.bio && <p className="author-bio__description">{profile.bio}</p>}
         </div>
+        <FollowButton
+          userId={profile.id}
+          initialFollowerCount={followCounts.follower_count}
+          initialFollowingCount={followCounts.following_count}
+          showCounts={false}
+        />
       </div>
+
+      <CommentSection articleId={post.id} initialComments={comments} />
     </div>
   )
 }

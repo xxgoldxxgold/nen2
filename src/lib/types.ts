@@ -59,3 +59,32 @@ export interface AIUsageLog {
   tokens_used: number
   created_at: string
 }
+
+// Social features
+export interface Follow {
+  id: string
+  follower_id: string
+  following_id: string
+  created_at: string
+}
+
+export interface Like {
+  id: string
+  user_id: string
+  article_id: string
+  created_at: string
+}
+
+export interface Comment {
+  id: string
+  user_id: string
+  article_id: string
+  body: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CommentWithAuthor extends Comment {
+  author_name: string
+  author_avatar_url: string | null
+}

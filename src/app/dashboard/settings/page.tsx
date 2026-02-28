@@ -73,26 +73,44 @@ export default function SettingsPage() {
     })
 
     if (!res.ok) {
-      const err = await res.json()
+      const err = await res.json().catch(() => ({}))
       setMessage(err.error || '保存に失敗しました')
-    } else {
-      const updated = await res.json()
-      setProfile(updated)
-      setMessage('保存しました')
-      setUsernameError(null)
-      // Revalidate public pages (old and new username if changed)
-      await fetch('/api/revalidate', {
+      setSaving(false)
+      return
+    }
+
+    const updated = await res.json()
+    if (!updated || !updated.username) {
+      setMessage('保存に失敗しました（レスポンスが空です）')
+      setSaving(false)
+      return
+    }
+
+    // Sync all state from saved data
+    setProfile(updated)
+    setDisplayName(updated.display_name || '')
+    setUsername(updated.username || '')
+    setBio(updated.bio || '')
+    setAvatarUrl(updated.avatar_url || '')
+    setAccentColor(updated.accent_color || DEFAULT_THEME.accent_color)
+    setHeadingFont(updated.heading_font || DEFAULT_THEME.heading_font)
+    setBodyFont(updated.body_font || DEFAULT_THEME.body_font)
+    setHeaderImageUrl(updated.header_image_url || '')
+    setMessage(`保存しました ✓ ブログURL: nen2.com/${updated.username}`)
+    setUsernameError(null)
+
+    // Revalidate public pages (old and new username if changed)
+    fetch('/api/revalidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: updated.username }),
+    }).catch(() => {})
+    if (oldUsername && oldUsername !== updated.username) {
+      fetch('/api/revalidate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username }),
-      })
-      if (oldUsername && oldUsername !== username) {
-        await fetch('/api/revalidate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: oldUsername }),
-        })
-      }
+        body: JSON.stringify({ username: oldUsername }),
+      }).catch(() => {})
     }
 
     setSaving(false)

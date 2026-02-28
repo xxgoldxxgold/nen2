@@ -103,10 +103,16 @@ export async function PUT(request: Request) {
     .single()
 
   if (error) {
+    console.error('[profile PUT] error:', error.code, error.message, 'userId:', user.id, 'updateData:', JSON.stringify(updateData))
     if (error.message.includes('unique') || error.message.includes('duplicate')) {
       return NextResponse.json({ error: 'このユーザー名は既に使用されています' }, { status: 409 })
     }
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (!data) {
+    console.error('[profile PUT] no data returned, userId:', user.id)
+    return NextResponse.json({ error: 'プロフィールが見つかりません' }, { status: 404 })
   }
 
   return NextResponse.json(data)

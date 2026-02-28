@@ -2,12 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { cache } from 'react'
 
-/**
- * Auth client (server-side).
- * !! WARNING: This connects to the SHARED auth project (gc2.jp + nen2.com).
- * !! Do NOT modify auth settings, providers, or project config via this client.
- * !! Auth-only operations: getUser, getSession, signIn, signUp.
- */
+// Auth client (server-side) — shared project (vylwpbbwkmuxrfzmgvkj)
 export async function createClient() {
   const cookieStore = await cookies()
 

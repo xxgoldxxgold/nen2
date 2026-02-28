@@ -33,3 +33,8 @@ CREATE INDEX IF NOT EXISTS idx_nen2_follows_following ON nen2_follows (following
 CREATE INDEX IF NOT EXISTS idx_nen2_follows_follower ON nen2_follows (follower_id);
 CREATE INDEX IF NOT EXISTS idx_nen2_likes_article ON nen2_likes (article_id);
 CREATE INDEX IF NOT EXISTS idx_nen2_comments_article ON nen2_comments (article_id, created_at);
+
+-- Grant anon read access for public/ISR queries
+GRANT SELECT ON nen2_follows TO anon;
+GRANT SELECT ON nen2_likes TO anon;
+GRANT SELECT ON nen2_comments TO anon;

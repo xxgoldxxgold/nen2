@@ -75,45 +75,57 @@ export async function getPublicPostsByTag(tagId: string, userId: string) {
 }
 
 // --- Social public queries (for ISR initial data) ---
+// These must never throw — a failure should return defaults so the page still renders.
 
 export async function getPublicFollowCounts(userId: string) {
-  const [{ count: followerCount }, { count: followingCount }] = await Promise.all([
-    supabasePublic.from('nen2_follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
-    supabasePublic.from('nen2_follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
-  ])
-  return { follower_count: followerCount || 0, following_count: followingCount || 0 }
+  try {
+    const [r1, r2] = await Promise.all([
+      supabasePublic.from('nen2_follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
+      supabasePublic.from('nen2_follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
+    ])
+    return { follower_count: r1.count || 0, following_count: r2.count || 0 }
+  } catch {
+    return { follower_count: 0, following_count: 0 }
+  }
 }
 
 export async function getPublicLikeCount(articleId: string) {
-  const { count } = await supabasePublic
-    .from('nen2_likes')
-    .select('*', { count: 'exact', head: true })
-    .eq('article_id', articleId)
-  return count || 0
+  try {
+    const { count } = await supabasePublic
+      .from('nen2_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('article_id', articleId)
+    return count || 0
+  } catch {
+    return 0
+  }
 }
 
 export async function getPublicComments(articleId: string) {
-  const { data: comments } = await supabasePublic
-    .from('nen2_comments')
-    .select('id, user_id, article_id, body, created_at, updated_at')
-    .eq('article_id', articleId)
-    .order('created_at', { ascending: true })
-  if (!comments || comments.length === 0) return []
+  try {
+    const { data: comments } = await supabasePublic
+      .from('nen2_comments')
+      .select('id, user_id, article_id, body, created_at, updated_at')
+      .eq('article_id', articleId)
+      .order('created_at', { ascending: true })
+    if (!comments || comments.length === 0) return []
 
-  // Join with profiles for author info
-  const userIds = [...new Set(comments.map(c => c.user_id))]
-  const { data: profiles } = await supabasePublic
-    .from('profiles')
-    .select('id, display_name, avatar_url')
-    .in('id', userIds)
-  const profileMap = new Map((profiles || []).map(p => [p.id, p]))
+    const userIds = [...new Set(comments.map(c => c.user_id))]
+    const { data: profiles } = await supabasePublic
+      .from('profiles')
+      .select('id, display_name, avatar_url')
+      .in('id', userIds)
+    const profileMap = new Map((profiles || []).map(p => [p.id, p]))
 
-  return comments.map(c => {
-    const p = profileMap.get(c.user_id)
-    return {
-      ...c,
-      author_name: p?.display_name || '名無し',
-      author_avatar_url: p?.avatar_url || null,
-    }
-  })
+    return comments.map(c => {
+      const p = profileMap.get(c.user_id)
+      return {
+        ...c,
+        author_name: p?.display_name || '名無し',
+        author_avatar_url: p?.avatar_url || null,
+      }
+    })
+  } catch {
+    return []
+  }
 }

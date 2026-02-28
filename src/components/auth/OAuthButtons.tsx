@@ -13,23 +13,18 @@ function isInAppBrowser(): boolean {
 export default function OAuthButtons() {
   const [loading, setLoading] = useState<string | null>(null)
   const [inApp, setInApp] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     setInApp(isInAppBrowser())
   }, [])
 
-  const openInSystemBrowser = () => {
-    const url = window.location.href
-    // iOSではx-safari-httpsスキームでSafariを開く。動かない場合はコピー案内になる
-    window.location.href = `x-safari-https://${url.replace(/^https?:\/\//, '')}`
-    // フォールバック: 一定時間後もページにいる場合は何もしない（案内文を見てもらう）
+  const copyUrl = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => setCopied(true)).catch(() => {})
   }
 
   const handleOAuth = async (provider: 'google' | 'apple') => {
-    if (inApp) {
-      openInSystemBrowser()
-      return
-    }
+    if (inApp) return
     setLoading(provider)
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
@@ -47,14 +42,18 @@ export default function OAuthButtons() {
   return (
     <div className="flex flex-col gap-3">
       {inApp && (
-        <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-          <p className="font-semibold">アプリ内ブラウザでは利用できません</p>
-          <p className="mt-1">Google/Appleログインを使うには、SafariまたはChromeで開いてください。</p>
+        <div className="rounded-lg bg-amber-50 p-4 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+          <p className="text-center font-semibold">アプリ内ブラウザでは<br/>Google/Appleログインが使えません</p>
+          <p className="mt-2">以下の手順でSafari/Chromeで開いてください：</p>
+          <ol className="mt-1 list-decimal space-y-1 pl-5">
+            <li>右下の <b>「...」</b> または共有ボタンをタップ</li>
+            <li><b>「ブラウザで開く」</b>または<b>「Safariで開く」</b>を選択</li>
+          </ol>
           <button
-            onClick={openInSystemBrowser}
-            className="mt-2 w-full rounded-md bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700"
+            onClick={copyUrl}
+            className="mt-3 w-full rounded-md border border-amber-300 bg-white px-3 py-2 text-center text-sm text-gray-700 dark:border-amber-600 dark:bg-gray-800 dark:text-gray-200"
           >
-            Safariで開く
+            {copied ? 'コピーしました！Safariに貼り付けてください' : 'nen2.com/login（タップでコピー）'}
           </button>
         </div>
       )}

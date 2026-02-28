@@ -13,6 +13,38 @@ export async function GET() {
 
   let { data: profile } = await db.from('profiles').select('*').eq('id', user.id).single()
 
+  // Auth ID migration: if profile found but has no data (auto-created stub),
+  // or if no profile found by ID, check by email for old profile (auth provider changed)
+  if (!profile && user.email) {
+    const { data: oldProfile } = await db.from('profiles').select('*').eq('email', user.email).single()
+    if (oldProfile && oldProfile.id !== user.id) {
+      const oldId = oldProfile.id
+      const newId = user.id
+      // Delete any stub profile already created with the new ID
+      await db.from('profiles').delete().eq('id', newId)
+      // Migrate all related records to new auth ID
+      await db.from('articles').update({ user_id: newId }).eq('user_id', oldId)
+      await db.from('ai_usage_logs').update({ user_id: newId }).eq('user_id', oldId)
+      // Update the old profile's ID to the new auth ID
+      await db.from('profiles').update({ id: newId }).eq('id', oldId)
+      const { data: migrated } = await db.from('profiles').select('*').eq('id', newId).single()
+      profile = migrated
+    }
+  } else if (profile) {
+    // Profile exists with current ID — check if there's also an old orphaned profile by email
+    if (user.email) {
+      const { data: oldProfiles } = await db.from('profiles').select('id').eq('email', user.email).neq('id', user.id)
+      if (oldProfiles && oldProfiles.length > 0) {
+        for (const old of oldProfiles) {
+          // Migrate articles from old profile, then delete the orphan
+          await db.from('articles').update({ user_id: user.id }).eq('user_id', old.id)
+          await db.from('ai_usage_logs').update({ user_id: user.id }).eq('user_id', old.id)
+          await db.from('profiles').delete().eq('id', old.id)
+        }
+      }
+    }
+  }
+
   if (!profile) {
     let username = user.user_metadata?.username || user.email?.split('@')[0]?.replace(/[^a-z0-9_-]/gi, '').toLowerCase() || ''
     // Enforce minimum length and reserved word check on auto-provision

@@ -30,8 +30,18 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
 
-  // Auto-provision profile if not exists
-  const { data: profile } = await db.from('profiles').select('id').eq('id', user.id).single()
+  // Auto-provision profile if not exists (with auth ID migration)
+  let { data: profile } = await db.from('profiles').select('id').eq('id', user.id).single()
+  if (!profile && user.email) {
+    const { data: existing } = await db.from('profiles').select('id').eq('email', user.email).single()
+    if (existing) {
+      const oldId = existing.id
+      await db.from('articles').update({ user_id: user.id }).eq('user_id', oldId)
+      await db.from('ai_usage_logs').update({ user_id: user.id }).eq('user_id', oldId)
+      await db.from('profiles').update({ id: user.id }).eq('id', oldId)
+      profile = { id: user.id }
+    }
+  }
   if (!profile) {
     let username = user.user_metadata?.username || user.email?.split('@')[0]?.replace(/[^a-z0-9_-]/gi, '').toLowerCase() || ''
     if (validateUsername(username) !== null) {
@@ -43,6 +53,7 @@ export async function POST(request: Request) {
       username,
       display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || '',
     })
+    profile = { id: user.id }
   }
 
   const body = await request.json()

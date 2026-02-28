@@ -1,12 +1,35 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+function isInAppBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent || ''
+  return /Line\/|FBAN|FBAV|Instagram|Twitter|MicroMessenger|WeChat|TikTok/i.test(ua)
+    || (/iPhone|iPad|iPod/.test(ua) && !/Safari/i.test(ua))
+}
 
 export default function OAuthButtons() {
   const [loading, setLoading] = useState<string | null>(null)
+  const [inApp, setInApp] = useState(false)
+
+  useEffect(() => {
+    setInApp(isInAppBrowser())
+  }, [])
+
+  const openInSystemBrowser = () => {
+    const url = window.location.href
+    // iOSではx-safari-httpsスキームでSafariを開く。動かない場合はコピー案内になる
+    window.location.href = `x-safari-https://${url.replace(/^https?:\/\//, '')}`
+    // フォールバック: 一定時間後もページにいる場合は何もしない（案内文を見てもらう）
+  }
 
   const handleOAuth = async (provider: 'google' | 'apple') => {
+    if (inApp) {
+      openInSystemBrowser()
+      return
+    }
     setLoading(provider)
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
@@ -23,6 +46,18 @@ export default function OAuthButtons() {
 
   return (
     <div className="flex flex-col gap-3">
+      {inApp && (
+        <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+          <p className="font-semibold">アプリ内ブラウザでは利用できません</p>
+          <p className="mt-1">Google/Appleログインを使うには、SafariまたはChromeで開いてください。</p>
+          <button
+            onClick={openInSystemBrowser}
+            className="mt-2 w-full rounded-md bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700"
+          >
+            Safariで開く
+          </button>
+        </div>
+      )}
       <button
         onClick={() => handleOAuth('google')}
         disabled={loading !== null}

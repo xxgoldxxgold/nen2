@@ -84,6 +84,21 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Username setup banner */}
+      {profile?.username?.startsWith('user-') && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+          <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+            ユーザー名が未設定です。ブログのURLが <code className="rounded bg-amber-100 px-1 dark:bg-amber-900/40">nen2.com/{profile.username}</code> になっています。
+          </p>
+          <Link
+            href="/dashboard/settings"
+            className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-amber-700 hover:text-amber-900 dark:text-amber-400"
+          >
+            設定からユーザー名を変更する →
+          </Link>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

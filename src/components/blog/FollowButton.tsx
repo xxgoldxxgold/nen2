@@ -57,7 +57,7 @@ export default function FollowButton({ userId, initialFollowerCount, initialFoll
   }
 
   // Don't show follow button for own profile
-  if (user?.id === userId) {
+  if (!authLoading && user?.id === userId) {
     return showCounts ? (
       <div className="follow-counts">
         <span><strong>{followerCount}</strong> フォロワー</span>
@@ -74,15 +74,13 @@ export default function FollowButton({ userId, initialFollowerCount, initialFoll
           <span><strong>{followingCount}</strong> フォロー中</span>
         </div>
       )}
-      {!authLoading && (
-        <button
-          onClick={handleToggle}
-          disabled={loading}
-          className={`follow-btn ${isFollowing ? 'follow-btn--following' : ''}`}
-        >
-          {loading ? '...' : isFollowing ? 'フォロー中' : 'フォローする'}
-        </button>
-      )}
+      <button
+        onClick={handleToggle}
+        disabled={loading || authLoading}
+        className={`follow-btn ${isFollowing ? 'follow-btn--following' : ''}`}
+      >
+        {loading ? '...' : isFollowing ? 'フォロー中' : 'フォローする'}
+      </button>
     </div>
   )
 }

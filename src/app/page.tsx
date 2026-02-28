@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Sparkles, Wand2, Palette, BarChart3, Zap, Globe, PenSquare } from 'lucide-react'
+import { Sparkles, Wand2, BarChart3, Zap, Globe, PenSquare } from 'lucide-react'
 
 export default function LandingPage() {
   return (
@@ -8,8 +8,8 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className="fixed top-0 z-50 w-full border-b border-gray-200/50 bg-white/80 backdrop-blur-lg dark:border-gray-800/50 dark:bg-gray-950/80">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white">
-            <Image src="/logo.png" alt="NEN2" width={28} height={28} className="h-7 w-7" />
+          <Link href="/" className="flex items-center gap-1.5 text-xl font-bold text-gray-900 dark:text-white">
+            <Image src="/logo.png" alt="" width={36} height={36} className="h-9 w-9" />
             NEN2
           </Link>
           <div className="flex items-center gap-4">
@@ -42,8 +42,7 @@ export default function LandingPage() {
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600 dark:text-gray-400">
-            記事作成・デザイン・SEO対策の全工程でAIが支援。
-            テクニカルな知識は不要です。今すぐ、あなただけのブログを始めましょう。
+            Markdownで書く。AIが支援する。シンプルで高速なブログプラットフォーム。
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
@@ -68,10 +67,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-              AIがブログ運営の全てをサポート
+              シンプル。高速。AI搭載。
             </h2>
             <p className="mt-4 text-gray-600 dark:text-gray-400">
-              記事を書くだけじゃない。デザインもSEOもAIにおまかせ。
+              note/Medium風のクリーンなデザインに、強力なAI機能を統合。
             </p>
           </div>
 
@@ -79,113 +78,51 @@ export default function LandingPage() {
             <FeatureCard
               icon={<Wand2 className="h-6 w-6" />}
               title="AI記事生成"
-              description="タイトルを入力するだけで、見出し構成から本文まで自動生成。トーンや文体も選択可能。"
+              description="タイトルを入力するだけで、Web検索に基づいた正確で充実した記事をMarkdownで自動生成。"
               color="blue"
             />
             <FeatureCard
               icon={<Sparkles className="h-6 w-6" />}
-              title="AIリライト"
-              description="テキストを選択して「より簡潔に」「より詳しく」。AIがあなたの文章を磨き上げます。"
+              title="AIリライト & 提案"
+              description="テキスト選択でリライト。カーソル位置で続きを提案。AIがあなたの執筆をリアルタイムで支援。"
               color="purple"
             />
             <FeatureCard
-              icon={<Palette className="h-6 w-6" />}
-              title="AIデザイン"
-              description="「もっとクールに」と話しかけるだけ。AIがブログのデザインを自動調整します。"
-              color="pink"
+              icon={<PenSquare className="h-6 w-6" />}
+              title="Markdownエディタ"
+              description="シンプルなMarkdownエディタ。ツールバー、画像D&D、キーボードショートカット対応。"
+              color="green"
             />
             <FeatureCard
               icon={<BarChart3 className="h-6 w-6" />}
-              title="SEO自動最適化"
-              description="記事を保存するたびにSEOスコアを算出。改善提案でGoogle上位表示を目指せます。"
-              color="green"
+              title="SEO分析 & タグ提案"
+              description="AIがSEOスコアを算出し改善提案。タグも自動提案で、検索流入を最大化。"
+              color="yellow"
             />
             <FeatureCard
               icon={<Zap className="h-6 w-6" />}
               title="高速配信"
-              description="Next.jsベースのSSG/SSRで超高速表示。Vercelの世界中のCDNで配信。"
-              color="yellow"
+              description="ISR + CDNで超高速表示。インラインCSS + セルフホストフォントで外部リクエストゼロ。"
+              color="pink"
             />
             <FeatureCard
               icon={<Globe className="h-6 w-6" />}
-              title="簡単公開"
-              description="サブドメイン自動割り当て。カスタムドメインも対応。すぐにブログを公開できます。"
+              title="OGP & シェア"
+              description="OGP画像自動生成、シェアボタン、サイトマップ。SNSでの拡散を後押し。"
               color="indigo"
             />
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="bg-gray-50 py-20 dark:bg-gray-900">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">料金プラン</h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">無料プランから始めて、成長に合わせてアップグレード</p>
-          </div>
-
-          <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3">
-            <PricingCard
-              name="Free"
-              price="¥0"
-              period=""
-              features={[
-                'ブログ1つ',
-                '記事30件まで',
-                'ストレージ 500MB',
-                'AI機能（制限あり）',
-                '基本テンプレート',
-              ]}
-              cta="無料で始める"
-              ctaHref="/signup"
-              highlighted={false}
-            />
-            <PricingCard
-              name="Pro"
-              price="¥980"
-              period="/月"
-              features={[
-                'ブログ3つ',
-                '記事数 無制限',
-                'ストレージ 5GB',
-                'AI機能 拡張',
-                'カスタムドメイン',
-                '広告非表示',
-                '詳細アナリティクス',
-              ]}
-              cta="Proを始める"
-              ctaHref="/signup"
-              highlighted={true}
-            />
-            <PricingCard
-              name="Business"
-              price="¥2,980"
-              period="/月"
-              features={[
-                'ブログ10個',
-                '記事数 無制限',
-                'ストレージ 50GB',
-                'AI機能 フル',
-                'カスタムドメイン',
-                '広告非表示',
-                '詳細アナリティクス + API',
-              ]}
-              cta="Businessを始める"
-              ctaHref="/signup"
-              highlighted={false}
-            />
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
-      <section className="py-20">
+      <section className="py-20 bg-gray-50 dark:bg-gray-900">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             今すぐ、AIの力でブログを始めよう
           </h2>
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-            登録は無料。クレジットカード不要。30秒で開始できます。
+            登録は無料。クレジットカード不要。
           </p>
           <Link
             href="/signup"
@@ -201,8 +138,8 @@ export default function LandingPage() {
       <footer className="border-t border-gray-200 dark:border-gray-800">
         <div className="mx-auto max-w-6xl px-6 py-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="flex items-center gap-2 text-sm font-bold text-gray-900 dark:text-white">
-              <Image src="/logo.png" alt="NEN2" width={20} height={20} className="h-5 w-5" />
+            <div className="flex items-center gap-1.5 text-sm font-bold text-gray-900 dark:text-white">
+              <Image src="/logo.png" alt="" width={25} height={25} className="h-[25px] w-[25px]" />
               NEN2
             </div>
             <div className="flex gap-6 text-sm text-gray-500">
@@ -240,52 +177,6 @@ function FeatureCard({
       </div>
       <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{description}</p>
-    </div>
-  )
-}
-
-function PricingCard({
-  name, price, period, features, cta, ctaHref, highlighted,
-}: {
-  name: string; price: string; period: string; features: string[]
-  cta: string; ctaHref: string; highlighted: boolean
-}) {
-  return (
-    <div className={`relative rounded-2xl border p-8 ${
-      highlighted
-        ? 'border-blue-600 bg-white shadow-xl shadow-blue-600/10 dark:bg-gray-900'
-        : 'border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900'
-    }`}>
-      {highlighted && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-4 py-1 text-xs font-semibold text-white">
-          人気
-        </span>
-      )}
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{name}</h3>
-      <div className="mt-4">
-        <span className="text-4xl font-bold text-gray-900 dark:text-white">{price}</span>
-        <span className="text-sm text-gray-500">{period}</span>
-      </div>
-      <ul className="mt-6 space-y-3">
-        {features.map((feature) => (
-          <li key={feature} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <svg className="h-4 w-4 flex-shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            {feature}
-          </li>
-        ))}
-      </ul>
-      <Link
-        href={ctaHref}
-        className={`mt-8 block w-full rounded-lg py-3 text-center text-sm font-semibold transition-colors ${
-          highlighted
-            ? 'bg-blue-600 text-white hover:bg-blue-700'
-            : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800'
-        }`}
-      >
-        {cta}
-      </Link>
     </div>
   )
 }

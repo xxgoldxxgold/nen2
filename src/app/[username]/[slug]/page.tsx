@@ -1,34 +1,57 @@
-import { getPublicUser, getPublicPost, getPublicPostTags } from '@/lib/supabase/public'
+import { getPublicProfile, getPublicPost, getPublicPostTags } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
-import BlogThemeWrapper, { getThemeLayout } from '@/components/blog/BlogThemeWrapper'
-import Avatar from '@/components/blog/Avatar'
+import { formatDate } from '@/lib/utils'
+import { estimateReadTime } from '@/lib/markdown'
+import ShareButtons from '@/components/ShareButtons'
 
-export const revalidate = 300
+export const revalidate = 3600
 export const dynamicParams = true
-export async function generateStaticParams() { return [] }
+export async function generateStaticParams() {
+  const { supabasePublic } = await import('@/lib/supabase/public')
+  const { data: profiles } = await supabasePublic.from('profiles').select('id, username')
+  if (!profiles) return []
+  const params: { username: string; slug: string }[] = []
+  for (const p of profiles) {
+    const { data: posts } = await supabasePublic
+      .from('articles')
+      .select('slug')
+      .eq('user_id', p.id)
+      .eq('status', 'published')
+    if (posts) {
+      for (const post of posts) {
+        params.push({ username: p.username, slug: post.slug })
+      }
+    }
+  }
+  return params
+}
 
 type Props = { params: Promise<{ username: string; slug: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username, slug } = await params
-  const user = await getPublicUser(decodeURIComponent(username))
-  if (!user) return { title: '記事が見つかりません' }
-  const post = await getPublicPost(user.id, decodeURIComponent(slug))
+  const profile = await getPublicProfile(decodeURIComponent(username))
+  if (!profile) return { title: '記事が見つかりません' }
+  const post = await getPublicPost(profile.id, decodeURIComponent(slug))
   if (!post) return { title: '記事が見つかりません' }
+
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nen2.com'
+  const ogImageUrl = `${baseUrl}/api/og/${username}/${slug}`
+
   return {
-    title: `${post.title} | ${user.display_name}`,
+    title: `${post.title} | ${profile.display_name}`,
     description: post.meta_description || post.excerpt || '',
     openGraph: {
       title: post.title,
       description: post.meta_description || post.excerpt || '',
       type: 'article',
-      ...(post.cover_image_url && { images: [post.cover_image_url] }),
+      images: [post.cover_image_url || ogImageUrl],
     },
     twitter: {
-      card: post.cover_image_url ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title: post.title,
       description: post.meta_description || post.excerpt || '',
     },
@@ -40,125 +63,93 @@ export default async function PostPage({ params }: Props) {
   const decodedUsername = decodeURIComponent(username)
   const decodedSlug = decodeURIComponent(slug)
 
-  const user = await getPublicUser(decodedUsername)
-  if (!user) notFound()
+  const profile = await getPublicProfile(decodedUsername)
+  if (!profile) notFound()
 
-  const post = await getPublicPost(user.id, decodedSlug)
+  const post = await getPublicPost(profile.id, decodedSlug)
   if (!post) notFound()
 
   const tags = await getPublicPostTags(post.id)
+  const plainText = post.content_html?.replace(/<[^>]*>/g, '') || ''
+  const readTime = estimateReadTime(plainText)
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nen2.com'
+  const pageUrl = `${baseUrl}/${username}/${slug}`
 
-  const readTime = Math.ceil((post.content_html?.replace(/<[^>]*>/g, '').length || 0) / 500)
-  const layout = getThemeLayout(user.blog_settings || {})
-  const isTwoCol = layout.type === 'two_column'
-
-  const articleContent = (
-    <article>
-      <h1 className="article__title">{post.title}</h1>
-
-      <div className="article__meta">
-        <Avatar src={user.avatar_url} name={user.display_name} size={24} style={{ display: 'inline-block' }} />
-        <span>{user.display_name}</span>
-        <span>&middot;</span>
-        {post.published_at && (
-          <time>{new Date(post.published_at).toLocaleDateString('ja-JP', {
-            year: 'numeric', month: 'long', day: 'numeric',
-          })}</time>
-        )}
-        <span>&middot;</span>
-        <span>{readTime}分で読める</span>
-      </div>
-
-      {tags.length > 0 && (
-        <div style={{ marginBottom: '1.5em' }}>
-          {tags.map((tag: string) => (
-            <Link key={tag} href={`/${username}/tag/${encodeURIComponent(tag)}`} className="tag">
-              #{tag}
-            </Link>
-          ))}
+  return (
+    <div className="container" style={{ paddingTop: '2em', paddingBottom: '2em' }}>
+      {post.cover_image_url && (
+        <div className="cover">
+          <Image
+            src={post.cover_image_url}
+            alt={post.title}
+            width={1200}
+            height={630}
+            sizes="(max-width: 1200px) 100vw, 1200px"
+            priority
+            style={{ width: '100%', height: 'auto' }}
+          />
         </div>
       )}
 
-      <div className="article__content" dangerouslySetInnerHTML={{ __html: post.content_html || '' }} />
-    </article>
-  )
+      <article>
+        <h1 className="article__title">{post.title}</h1>
 
-  const sidebar = (
-    <aside className="two-col__side">
-      <div className="sidebar-section">
-        <h3>著者</h3>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <Avatar src={user.avatar_url} name={user.display_name} size={40} />
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 'var(--fs-sm)' }}>{user.display_name}</div>
-            {user.bio && <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--c-text2)', margin: '0.2em 0 0' }}>{user.bio}</p>}
-          </div>
+        <div className="article__meta">
+          {profile.avatar_url ? (
+            <Image src={profile.avatar_url} alt="" width={24} height={24} style={{ borderRadius: '50%', objectFit: 'cover' }} />
+          ) : (
+            <span
+              style={{
+                width: 24, height: 24, borderRadius: '50%', display: 'inline-flex',
+                alignItems: 'center', justifyContent: 'center',
+                background: profile.accent_color, color: '#fff', fontSize: '0.7em', fontWeight: 700,
+              }}
+            >
+              {profile.display_name?.charAt(0)}
+            </span>
+          )}
+          <span>{profile.display_name}</span>
+          <span>&middot;</span>
+          {post.published_at && <time>{formatDate(post.published_at)}</time>}
+          <span>&middot;</span>
+          <span>{readTime}分で読める</span>
         </div>
-      </div>
-      {tags.length > 0 && (
-        <div className="sidebar-section">
-          <h3>タグ</h3>
-          <div>
+
+        {tags.length > 0 && (
+          <div style={{ marginBottom: '1.5em' }}>
             {tags.map((tag: string) => (
-              <Link key={tag} href={`/${username}/tag/${encodeURIComponent(tag)}`} className="tag" style={{ marginBottom: '0.3em' }}>
+              <Link key={tag} href={`/${username}/tags/${encodeURIComponent(tag)}`} className="tag">
                 #{tag}
               </Link>
             ))}
           </div>
-        </div>
-      )}
-    </aside>
-  )
-
-  return (
-    <BlogThemeWrapper blogSettings={user.blog_settings || {}}>
-      <header className="header">
-        <div className="header-inner">
-          <Link href={`/${username}`} className="logo" style={{ fontSize: '1em' }}>
-            &larr; {user.display_name}のブログ
-          </Link>
-        </div>
-      </header>
-
-      <div className="container" style={{ paddingTop: '2em', paddingBottom: '2em' }}>
-        {post.cover_image_url && (
-          <div className="cover">
-            <Image
-              src={post.cover_image_url}
-              alt={post.title}
-              width={1200}
-              height={630}
-              sizes="(max-width: 1200px) 100vw, 1200px"
-              priority
-              style={{ width: '100%', height: 'auto' }}
-            />
-          </div>
         )}
 
-        {isTwoCol ? (
-          <div className="two-col">
-            <div className="two-col__main">
-              {articleContent}
-            </div>
-            {sidebar}
-          </div>
+        <div className="article__content" dangerouslySetInnerHTML={{ __html: post.content_html || '' }} />
+      </article>
+
+      <ShareButtons url={pageUrl} title={post.title} />
+
+      {/* Author bio */}
+      <div className="author-bio">
+        {profile.avatar_url ? (
+          <Image src={profile.avatar_url} alt="" width={48} height={48} className="author-bio__avatar" />
         ) : (
-          <>
-            {articleContent}
-            <div className="author-bio">
-              <Avatar src={user.avatar_url} name={user.display_name} size={48} className="author-bio__avatar" />
-              <div>
-                <div className="author-bio__name">{user.display_name}</div>
-                {user.bio && <p className="author-bio__description">{user.bio}</p>}
-              </div>
-            </div>
-          </>
+          <div
+            className="author-bio__avatar"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: profile.accent_color, color: '#fff', fontWeight: 700, fontSize: '1.2em',
+            }}
+          >
+            {profile.display_name?.charAt(0) || '?'}
+          </div>
         )}
+        <div>
+          <div className="author-bio__name">{profile.display_name}</div>
+          {profile.bio && <p className="author-bio__description">{profile.bio}</p>}
+        </div>
       </div>
-
-      <footer className="footer">
-        <Link href={`/${username}`}>他の記事を読む</Link> &middot; Powered by <Link href="/"><Image src="/logo.png" alt="NEN2" width={16} height={16} style={{ display: 'inline', verticalAlign: 'middle' }} /> NEN2</Link>
-      </footer>
-    </BlogThemeWrapper>
+    </div>
   )
 }

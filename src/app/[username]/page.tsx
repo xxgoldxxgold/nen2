@@ -1,117 +1,89 @@
-import { getPublicUser, getPublicPosts } from '@/lib/supabase/public'
+import { getPublicProfile, getPublicPosts } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
-import BlogThemeWrapper, { getThemeLayout } from '@/components/blog/BlogThemeWrapper'
-import Avatar from '@/components/blog/Avatar'
+import { formatDate } from '@/lib/utils'
 
-export const revalidate = 300
+export const revalidate = 3600
 export const dynamicParams = true
-export async function generateStaticParams() { return [] }
+export async function generateStaticParams() {
+  const { supabasePublic } = await import('@/lib/supabase/public')
+  const { data } = await supabasePublic.from('profiles').select('username')
+  return (data || []).map((p) => ({ username: p.username }))
+}
 
 type Props = { params: Promise<{ username: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params
-  const user = await getPublicUser(decodeURIComponent(username))
-  if (!user) return { title: 'ブログが見つかりません' }
+  const profile = await getPublicProfile(decodeURIComponent(username))
+  if (!profile) return { title: 'ブログが見つかりません' }
   return {
-    title: `${user.display_name}のブログ`,
-    description: user.bio || `${user.display_name}のブログです`,
+    title: `${profile.display_name}のブログ`,
+    description: profile.bio || `${profile.display_name}のブログです`,
   }
 }
 
 export default async function UserBlogPage({ params }: Props) {
   const { username } = await params
   const decodedUsername = decodeURIComponent(username)
-  const user = await getPublicUser(decodedUsername)
-  if (!user) notFound()
+  const profile = await getPublicProfile(decodedUsername)
+  if (!profile) notFound()
 
-  const posts = await getPublicPosts(user.id)
-
-  const layout = getThemeLayout(user.blog_settings || {})
-  const isTwoCol = layout.type === 'two_column'
-
-  const articleList = posts && posts.length > 0 ? (
-    <div className="article-list">
-      {posts.map((post) => (
-        <Link key={post.id} href={`/${username}/${post.slug}`} className="article-card">
-          {post.cover_image_url && (
-            <div className="article-card__thumbnail">
-              <Image
-                src={post.cover_image_url}
-                alt={post.title}
-                width={600}
-                height={400}
-                sizes="(max-width: 768px) 100vw, 50vw"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            </div>
-          )}
-          <div className="article-card__body">
-            <h2 className="article-card__title">{post.title}</h2>
-            {post.excerpt && <p className="article-card__excerpt">{post.excerpt}</p>}
-            <div className="article-card__meta">
-              {post.published_at && (
-                <time>{new Date(post.published_at).toLocaleDateString('ja-JP')}</time>
-              )}
-            </div>
-          </div>
-        </Link>
-      ))}
-    </div>
-  ) : (
-    <p style={{ textAlign: 'center', color: 'var(--c-text-m)', padding: '4em 0' }}>
-      まだ記事が公開されていません
-    </p>
-  )
-
-  const sidebar = (
-    <aside className="two-col__side">
-      <div className="sidebar-section">
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <Avatar src={user.avatar_url} name={user.display_name} size={48} />
-          <div>
-            <div style={{ fontWeight: 700 }}>{user.display_name}</div>
-            {user.bio && <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--c-text2)', margin: '0.3em 0 0' }}>{user.bio}</p>}
-          </div>
-        </div>
-      </div>
-    </aside>
-  )
+  const posts = await getPublicPosts(profile.id)
 
   return (
-    <BlogThemeWrapper blogSettings={user.blog_settings || {}}>
-      <header className="header">
-        <div className="header-inner">
-          <Link href={`/${username}`} className="logo">{user.display_name}のブログ</Link>
-        </div>
-      </header>
-
-      <div className="container" style={{ paddingTop: '2em', paddingBottom: '2em' }}>
-        {isTwoCol ? (
-          <div className="two-col">
-            <div className="two-col__main">{articleList}</div>
-            {sidebar}
-          </div>
+    <div className="container" style={{ paddingTop: '2em', paddingBottom: '2em' }}>
+      {/* Author info */}
+      <div className="author-bio" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0, marginBottom: '2em' }}>
+        {profile.avatar_url ? (
+          <Image src={profile.avatar_url} alt="" width={48} height={48} className="author-bio__avatar" />
         ) : (
-          <>
-            <div className="author-bio" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0, marginBottom: '2em' }}>
-              <Avatar src={user.avatar_url} name={user.display_name} size={48} className="author-bio__avatar" />
-              <div>
-                <div className="author-bio__name">{user.display_name}</div>
-                {user.bio && <p className="author-bio__description">{user.bio}</p>}
-              </div>
-            </div>
-            {articleList}
-          </>
+          <div
+            className="author-bio__avatar"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: profile.accent_color || '#5c6b4a', color: '#fff', fontWeight: 700, fontSize: '1.2em',
+            }}
+          >
+            {profile.display_name?.charAt(0) || '?'}
+          </div>
         )}
+        <div>
+          <div className="author-bio__name">{profile.display_name}</div>
+          {profile.bio && <p className="author-bio__description">{profile.bio}</p>}
+        </div>
       </div>
 
-      <footer className="footer">
-        Powered by <Link href="/"><Image src="/logo.png" alt="NEN2" width={16} height={16} style={{ display: 'inline', verticalAlign: 'middle' }} /> NEN2</Link>
-      </footer>
-    </BlogThemeWrapper>
+      {/* Post list */}
+      {posts && posts.length > 0 ? (
+        <div className="article-list">
+          {posts.map((post) => (
+            <Link key={post.id} href={`/${username}/${post.slug}`} className="article-card">
+              {post.cover_image_url && (
+                <Image
+                  src={post.cover_image_url}
+                  alt=""
+                  width={800}
+                  height={200}
+                  sizes="(max-width: 768px) 100vw, 720px"
+                  style={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 8, marginBottom: '0.75em' }}
+                />
+              )}
+              <h2 className="article-card__title">{post.title}</h2>
+              {post.excerpt && <p className="article-card__excerpt">{post.excerpt}</p>}
+              <div className="article-card__meta">
+                {post.published_at && <time>{formatDate(post.published_at)}</time>}
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <p style={{ textAlign: 'center', color: 'var(--c-text-m)', padding: '4em 0' }}>
+          まだ記事が公開されていません
+        </p>
+      )}
+    </div>
   )
 }

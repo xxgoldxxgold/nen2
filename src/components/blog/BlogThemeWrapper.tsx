@@ -1,27 +1,33 @@
-import { migrateOldSettings } from '@/lib/theme'
-import type { BlogTheme } from '@/lib/theme'
+import { profileToTheme, generateInlineCSS, generateGoogleFontsUrl } from '@/lib/theme'
 import type { ReactNode } from 'react'
 
 interface BlogThemeWrapperProps {
-  blogSettings: Record<string, unknown>
+  profile: {
+    accent_color: string
+    heading_font: string
+    body_font: string
+    header_image_url: string | null
+  }
   children: ReactNode
 }
 
-export default function BlogThemeWrapper({ blogSettings, children }: BlogThemeWrapperProps) {
-  const theme = migrateOldSettings(blogSettings)
+export default function BlogThemeWrapper({ profile, children }: BlogThemeWrapperProps) {
+  const theme = profileToTheme(profile)
+  const css = generateInlineCSS(theme)
+  const fontsUrl = generateGoogleFontsUrl(theme)
 
   return (
     <>
-      {theme.font_preload.map((f: string) => (
-        <link key={f} rel="preload" href={f} as="font" type="font/woff2" crossOrigin="anonymous" />
-      ))}
-      <style dangerouslySetInnerHTML={{ __html: theme.css.inline }} />
+      {fontsUrl && (
+        <>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link rel="preload" href={fontsUrl} as="style" />
+          <link rel="stylesheet" href={fontsUrl} />
+        </>
+      )}
+      <style dangerouslySetInnerHTML={{ __html: css }} />
       {children}
     </>
   )
-}
-
-export function getThemeLayout(blogSettings: Record<string, unknown>): BlogTheme['layout'] {
-  const theme = migrateOldSettings(blogSettings)
-  return theme.layout
 }

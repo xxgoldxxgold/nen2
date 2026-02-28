@@ -41,14 +41,13 @@ export function streamClaude(
 
 export async function checkRateLimit(supabase: any, userId: string, type: string): Promise<boolean> {
   const { data: user } = await supabase
-    .from('users')
+    .from('profiles')
     .select('plan, ai_credits_remaining')
     .eq('id', userId)
     .single()
 
   if (!user) return false
 
-  // Get usage count for current month
   const startOfMonth = new Date()
   startOfMonth.setDate(1)
   startOfMonth.setHours(0, 0, 0, 0)
@@ -61,9 +60,9 @@ export async function checkRateLimit(supabase: any, userId: string, type: string
     .gte('created_at', startOfMonth.toISOString())
 
   const limits: Record<string, Record<string, number>> = {
-    free: { generate: 10, rewrite: 20, suggest: 50, seo_analyze: 5, generate_image: 5, suggest_tags: 20, design: 3 },
-    pro: { generate: 100, rewrite: 200, suggest: 500, seo_analyze: 9999, generate_image: 50, suggest_tags: 200, design: 9999 },
-    business: { generate: 9999, rewrite: 9999, suggest: 9999, seo_analyze: 9999, generate_image: 200, suggest_tags: 9999, design: 9999 },
+    free: { generate: 10, rewrite: 20, suggest: 50, seo_analyze: 5, generate_image: 5, suggest_tags: 20 },
+    pro: { generate: 100, rewrite: 200, suggest: 500, seo_analyze: 9999, generate_image: 50, suggest_tags: 200 },
+    business: { generate: 9999, rewrite: 9999, suggest: 9999, seo_analyze: 9999, generate_image: 200, suggest_tags: 9999 },
   }
 
   const limit = limits[user.plan]?.[type] ?? 10

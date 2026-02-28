@@ -11,7 +11,7 @@ export default function SignupPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4 dark:bg-gray-900">
       <Link href="/" className="mb-8 flex items-center gap-2 text-2xl font-bold text-blue-600">
-        <Image src="/logo.png" alt="NEN2" width={32} height={32} className="h-8 w-8" />
+        <Image src="/logo.png" alt="NEN2" width={43} height={43} className="h-[43px] w-[43px]" />
         NEN2
       </Link>
       <SignupForm />

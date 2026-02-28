@@ -14,32 +14,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   // User blogs
-  const { data: users } = await supabasePublic
-    .from('users')
+  const { data: profiles } = await supabasePublic
+    .from('profiles')
     .select('username, updated_at')
     .limit(1000)
 
-  const userPages: MetadataRoute.Sitemap = (users || []).map(user => ({
-    url: `${baseUrl}/${user.username}`,
-    lastModified: new Date(user.updated_at),
+  const profilePages: MetadataRoute.Sitemap = (profiles || []).map(p => ({
+    url: `${baseUrl}/${p.username}`,
+    lastModified: new Date(p.updated_at),
     changeFrequency: 'daily' as const,
     priority: 0.7,
   }))
 
   // Published posts
   const { data: posts } = await supabasePublic
-    .from('blog_posts')
-    .select('slug, user_id, updated_at, users(username)')
+    .from('articles')
+    .select('slug, user_id, updated_at, profiles(username)')
     .eq('status', 'published')
     .order('updated_at', { ascending: false })
     .limit(5000)
 
   const postPages: MetadataRoute.Sitemap = (posts || []).map((post: any) => ({
-    url: `${baseUrl}/${post.users?.username}/${post.slug}`,
+    url: `${baseUrl}/${post.profiles?.username}/${post.slug}`,
     lastModified: new Date(post.updated_at),
     changeFrequency: 'weekly' as const,
     priority: 0.8,
   }))
 
-  return [...staticPages, ...userPages, ...postPages]
+  return [...staticPages, ...profilePages, ...postPages]
 }

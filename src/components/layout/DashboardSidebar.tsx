@@ -6,21 +6,14 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard,
-  FileText,
   PenSquare,
-  Palette,
   Settings,
-  BarChart3,
   LogOut,
-  Sparkles,
 } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'ダッシュボード', icon: LayoutDashboard },
-  { href: '/dashboard/posts', label: '記事管理', icon: FileText },
-  { href: '/dashboard/posts/new', label: '新規作成', icon: PenSquare },
-  { href: '/dashboard/design', label: 'デザイン', icon: Palette },
-  { href: '/dashboard/analytics', label: 'アクセス解析', icon: BarChart3 },
+  { href: '/dashboard/new', label: '新規記事', icon: PenSquare },
   { href: '/dashboard/settings', label: '設定', icon: Settings },
 ]
 
@@ -38,8 +31,8 @@ export default function DashboardSidebar() {
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
       <div className="flex items-center gap-2 border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-        <Image src="/logo.png" alt="NEN2" width={28} height={28} className="h-7 w-7" />
-        <Link href="/dashboard" className="text-xl font-bold text-gray-900 dark:text-white">
+        <Link href="/dashboard" className="flex items-center gap-1.5 text-xl font-bold text-gray-900 dark:text-white">
+          <Image src="/logo.png" alt="" width={36} height={36} className="h-9 w-9" />
           NEN2
         </Link>
       </div>
@@ -47,9 +40,9 @@ export default function DashboardSidebar() {
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navItems.map((item) => {
           const Icon = item.icon
-          const isActive = pathname === item.href ||
-            (item.href !== '/dashboard' && pathname.startsWith(item.href) &&
-              !navItems.some(other => other.href !== item.href && other.href.startsWith(item.href) && pathname.startsWith(other.href)))
+          const isActive = item.href === '/dashboard'
+            ? pathname === '/dashboard' || pathname.startsWith('/dashboard/edit')
+            : pathname.startsWith(item.href)
           return (
             <Link
               key={item.href}

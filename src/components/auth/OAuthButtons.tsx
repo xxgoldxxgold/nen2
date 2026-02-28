@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect } from 'react'
 
+
 function isInAppBrowser(): boolean {
   if (typeof navigator === 'undefined') return false
   const ua = navigator.userAgent || ''
@@ -13,15 +14,10 @@ function isInAppBrowser(): boolean {
 export default function OAuthButtons() {
   const [loading, setLoading] = useState<string | null>(null)
   const [inApp, setInApp] = useState(false)
-  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     setInApp(isInAppBrowser())
   }, [])
-
-  const copyUrl = () => {
-    navigator.clipboard.writeText(window.location.href).then(() => setCopied(true)).catch(() => {})
-  }
 
   const handleOAuth = async (provider: 'google' | 'apple') => {
     if (inApp) return
@@ -42,19 +38,9 @@ export default function OAuthButtons() {
   return (
     <div className="flex flex-col gap-3">
       {inApp && (
-        <div className="rounded-lg bg-amber-50 p-4 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-          <p className="text-center font-semibold">アプリ内ブラウザでは<br/>Google/Appleログインが使えません</p>
-          <p className="mt-2">以下の手順でSafari/Chromeで開いてください：</p>
-          <ol className="mt-1 list-decimal space-y-1 pl-5">
-            <li>右下の <b>「...」</b> または共有ボタンをタップ</li>
-            <li><b>「ブラウザで開く」</b>または<b>「Safariで開く」</b>を選択</li>
-          </ol>
-          <button
-            onClick={copyUrl}
-            className="mt-3 w-full rounded-md border border-amber-300 bg-white px-3 py-2 text-center text-sm text-gray-700 dark:border-amber-600 dark:bg-gray-800 dark:text-gray-200"
-          >
-            {copied ? 'コピーしました！Safariに貼り付けてください' : 'nen2.com/login（タップでコピー）'}
-          </button>
+        <div className="rounded-lg bg-amber-50 p-3 text-center text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+          <p className="font-semibold">Safariで開いてください</p>
+          <p className="mt-1">右下の「…」→「ブラウザで開く」</p>
         </div>
       )}
       <button

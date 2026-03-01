@@ -36,8 +36,14 @@ export default function SeoSection({ title, content, metaDescription, slug, seoS
         return
       }
       const data = await res.json()
+      const sug: string[] = data.suggestions ?? []
+      // パース失敗メッセージをerrorに振り分ける
+      if (sug.length === 1 && sug[0].includes('失敗')) {
+        setError(sug[0])
+        return
+      }
       onScoreChange(data.score ?? 0)
-      setSuggestions(data.suggestions ?? [])
+      setSuggestions(sug)
     } catch {
       setError('SEO分析に失敗しました')
     } finally {

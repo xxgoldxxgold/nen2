@@ -38,11 +38,21 @@ ${content?.replace(/<[^>]*>/g, '').slice(0, 3000) || '（なし）'}`,
     await logAIUsage(db, user.id, 'seo_analyze')
 
     try {
-      // Claudeがコードブロック付きで返す場合があるので、JSONだけ抽出する
-      const jsonMatch = result.match(/\{[\s\S]*\}/)
-      const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : result)
-      return NextResponse.json(parsed)
-    } catch {
+      // コードブロック ```json ... ``` を除去
+      let cleaned = result.replace(/```(?:json)?\s*/g, '').replace(/```/g, '').trim()
+      // JSON部分を抽出（最外側の { ... } を取得）
+      const start = cleaned.indexOf('{')
+      const end = cleaned.lastIndexOf('}')
+      if (start !== -1 && end > start) {
+        cleaned = cleaned.slice(start, end + 1)
+      }
+      const parsed = JSON.parse(cleaned)
+      return NextResponse.json({
+        score: typeof parsed.score === 'number' ? parsed.score : 50,
+        suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
+      })
+    } catch (parseErr) {
+      console.error('SEO parse error. Raw result:', result, 'Error:', parseErr)
       return NextResponse.json({ score: 50, suggestions: ['SEO分析結果の解析に失敗しました'] })
     }
   } catch (error) {

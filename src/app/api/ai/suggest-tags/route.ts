@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
-import { callClaude, checkRateLimit, logAIUsage } from '@/lib/ai'
+import { callClaude, checkRateLimit, logAIUsage, getContextPrompt } from '@/lib/ai'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -15,8 +15,9 @@ export async function POST(request: Request) {
   const { title, content } = await request.json()
 
   try {
+    const contextPrompt = await getContextPrompt(db, user.id)
     const result = await callClaude(
-      'あなたはブログのタグ付けの専門家です。記事の内容に基づいて最適なタグを3〜5個提案してください。JSON配列形式で出力してください（例: ["タグ1", "タグ2", "タグ3"]）。JSON以外のテキストは出力しないでください。',
+      'あなたはブログのタグ付けの専門家です。記事の内容に基づいて最適なタグを3〜5個提案してください。JSON配列形式で出力してください（例: ["タグ1", "タグ2", "タグ3"]）。JSON以外のテキストは出力しないでください。' + contextPrompt,
       `タイトル: ${title || '不明'}\n本文: ${content?.replace(/<[^>]*>/g, '').slice(0, 2000) || '不明'}`,
       256
     )

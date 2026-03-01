@@ -74,6 +74,20 @@ export interface PostVersion {
   created_at: string
 }
 
+export type ContextNoteCategory = 'context' | 'style' | 'audience' | 'fact' | 'reference'
+
+export interface ContextNote {
+  id: string
+  user_id: string
+  category: ContextNoteCategory
+  title: string
+  content: string
+  is_active: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
 export interface AIUsageLog {
   id: string
   user_id: string

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
-import { callClaude, checkRateLimit, logAIUsage } from '@/lib/ai'
+import { callClaude, checkRateLimit, logAIUsage, getContextPrompt } from '@/lib/ai'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -15,8 +15,9 @@ export async function POST(request: Request) {
   const { context, title } = await request.json()
 
   try {
+    const contextPrompt = await getContextPrompt(db, user.id)
     const result = await callClaude(
-      'あなたはブログ記事の執筆アシスタントです。記事の続きとして自然な文章を1〜3文程度提案してください。提案文のみを出力してください。',
+      'あなたはブログ記事の執筆アシスタントです。記事の続きとして自然な文章を1〜3文程度提案してください。提案文のみを出力してください。' + contextPrompt,
       `記事タイトル: ${title || '不明'}\n直前の文脈: ${context}\n\n続きの文章を提案してください。`,
       256
     )

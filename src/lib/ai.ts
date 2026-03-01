@@ -75,6 +75,38 @@ export async function checkRateLimit(supabase: any, userId: string, type: string
   return (count || 0) < limit
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  context: 'ブログの方針',
+  style: 'スタイルガイド',
+  audience: 'ターゲット読者',
+  fact: '事実情報',
+  reference: '参考情報',
+}
+
+export async function getContextPrompt(supabase: any, userId: string): Promise<string> {
+  const { data: notes } = await supabase
+    .from('blog_context_notes')
+    .select('category, title, content')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .order('sort_order')
+
+  if (!notes || notes.length === 0) return ''
+
+  const grouped: Record<string, string[]> = {}
+  for (const note of notes) {
+    const cat = note.category
+    if (!grouped[cat]) grouped[cat] = []
+    grouped[cat].push(`- ${note.title}: ${note.content}`)
+  }
+
+  let prompt = '\n\n## ブログコンテキスト情報\n以下はこのブログに関する情報です。記事生成時にこれらを遵守してください。\n'
+  for (const [cat, items] of Object.entries(grouped)) {
+    prompt += `\n### ${CATEGORY_LABELS[cat] || cat}\n${items.join('\n')}\n`
+  }
+  return prompt
+}
+
 export async function logAIUsage(supabase: any, userId: string, type: string, tokensUsed = 0) {
   await supabase.from('ai_usage_logs').insert({
     user_id: userId,

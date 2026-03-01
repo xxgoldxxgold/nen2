@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
-import { streamClaude, checkRateLimit, logAIUsage } from '@/lib/ai'
+import { streamClaude, checkRateLimit, logAIUsage, getContextPrompt } from '@/lib/ai'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -45,6 +45,9 @@ export async function POST(request: Request) {
 ## トーン
 ${tone || 'プロフェッショナルだが親しみやすく、読みやすい'}`
 
+  const contextPrompt = await getContextPrompt(db, user.id)
+  const fullSystemPrompt = systemPrompt + contextPrompt
+
   const userPrompt = `以下のタイトルでブログ記事を書いてください。
 
 まず「${title}」についてWeb検索で最新情報を調べてから、その情報を元に記事を書いてください。
@@ -55,7 +58,7 @@ ${keywords?.length ? `キーワード: ${keywords.join(', ')}` : ''}
 検索で得た正確な情報に基づいた、内容の濃い記事をお願いします。`
 
   try {
-    const stream = streamClaude(systemPrompt, userPrompt, 8192, 'claude-opus-4-6', true)
+    const stream = streamClaude(fullSystemPrompt, userPrompt, 8192, 'claude-opus-4-6', true)
 
     const encoder = new TextEncoder()
     const readable = new ReadableStream({

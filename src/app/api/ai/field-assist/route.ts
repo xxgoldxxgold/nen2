@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
-import { callClaude, checkRateLimit, logAIUsage } from '@/lib/ai'
+import { callClaude, checkRateLimit, logAIUsage, getContextPrompt } from '@/lib/ai'
 import { NextResponse } from 'next/server'
 
 const FIELD_INSTRUCTIONS: Record<string, string> = {
@@ -28,9 +28,10 @@ export async function POST(request: Request) {
 
   try {
     const plainContent = (content || '').replace(/<[^>]*>/g, '').slice(0, 3000)
+    const contextPrompt = await getContextPrompt(db, user.id)
 
     const result = await callClaude(
-      `あなたはSEOとコンテンツマーケティングの専門家です。指示に従って正確にフィールドの値を生成してください。\n\n${instruction}`,
+      `あなたはSEOとコンテンツマーケティングの専門家です。指示に従って正確にフィールドの値を生成してください。\n\n${instruction}` + contextPrompt,
       `タイトル: ${title || '不明'}\n\n本文:\n${plainContent}`,
       512,
     )

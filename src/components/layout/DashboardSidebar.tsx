@@ -19,6 +19,7 @@ const navItems = [
   { href: '/dashboard', label: 'ダッシュボード', icon: LayoutDashboard },
   { href: '/dashboard/posts', label: '記事管理', icon: FileText },
   { href: '/dashboard/posts/new', label: '新規作成', icon: PenSquare },
+  { href: '/dashboard/ai-context', label: 'AIコンテキスト', icon: Sparkles },
   { href: '/dashboard/design', label: 'デザイン', icon: Palette },
   { href: '/dashboard/analytics', label: 'アクセス解析', icon: BarChart3 },
   { href: '/dashboard/settings', label: '設定', icon: Settings },

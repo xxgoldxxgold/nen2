@@ -32,17 +32,15 @@ export default function LandingPage() {
         <div className="mx-auto max-w-4xl px-6 text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
             <Sparkles className="h-4 w-4" />
-            AIネイティブ設計のブログプラットフォーム
+            AIファーストの設計のブログサービス
           </div>
           <h1 className="text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white sm:text-6xl">
-            言葉を入れるだけで
-            <br />
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              ブログが完成する
+              超シンプルなAIブログ
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600 dark:text-gray-400">
-            Markdownで書く。AIが支援する。シンプルで高速なブログプラットフォーム。
+            AIが支援、超シンプルで最高速ブログプラットフォーム。
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
@@ -70,7 +68,7 @@ export default function LandingPage() {
               シンプル。高速。AI搭載。
             </h2>
             <p className="mt-4 text-gray-600 dark:text-gray-400">
-              note/Medium風のクリーンなデザインに、強力なAI機能を統合。
+              超シンプルなデザインに、強力なAI機能を統合。
             </p>
           </div>
 
@@ -89,8 +87,8 @@ export default function LandingPage() {
             />
             <FeatureCard
               icon={<PenSquare className="h-6 w-6" />}
-              title="Markdownエディタ"
-              description="シンプルなMarkdownエディタ。ツールバー、画像D&D、キーボードショートカット対応。"
+              title="エディタ"
+              description="シンプルなエディタ。ツールバー、画像D&D、キーボードショートカット対応。"
               color="green"
             />
             <FeatureCard

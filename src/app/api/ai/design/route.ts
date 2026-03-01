@@ -34,7 +34,6 @@ Source Code Pro, Fira Code, JetBrains Mono
 
 ### layout.type
 - single_column: 1カラム。note/Medium風。max_width: 640〜780px推奨
-- two_column: サイドバー付き。はてなブログ風。max_width: 1000〜1100px推奨
 
 ### layout.header.style
 - centered: ロゴ中央
@@ -93,7 +92,7 @@ css, font_preloadフィールドは含めないでください（サーバー側
     }
   },
   "layout": {
-    "type": "single_column | two_column",
+    "type": "single_column",
     "max_width": "720px",
     "header": {
       "style": "centered | left_aligned | minimal"
@@ -148,13 +147,13 @@ components: heading_style:"background", article_card:"card"
 ### 「プロフェッショナル」「ビジネス」「信頼感」
 colors: { primary:"#1e40af", background:"#ffffff", surface:"#f8fafc", text:"#1e293b", text_secondary:"#475569", text_muted:"#94a3b8", border:"#e2e8f0", link:"#1e40af", link_hover:"#1e3a8a", code_bg:"#f1f5f9", code_text:"#334155" }
 typography: heading:"'Noto Sans JP', sans-serif", body:"'Noto Sans JP', sans-serif", code:"'Source Code Pro', monospace"
-layout: two_column, 1100px, left_aligned
+layout: single_column, 720px, left_aligned
 components: heading_style:"underline", article_card:"card"
 
 ### 「雑誌風」「マガジン」「メディア」
 colors: { primary:"#b91c1c", background:"#ffffff", surface:"#fafaf9", text:"#1c1917", text_secondary:"#57534e", text_muted:"#a8a29e", border:"#e7e5e4", link:"#b91c1c", link_hover:"#991b1b", code_bg:"#f5f5f4", code_text:"#292524" }
 typography: heading:"'Noto Serif JP', serif", body:"'Noto Sans JP', sans-serif", code:"'Source Code Pro', monospace"
-layout: two_column, 1100px, left_aligned
+layout: single_column, 740px, left_aligned
 components: heading_style:"underline", article_card:"list"
 
 ### 「テック」「エンジニア」「開発者向け」

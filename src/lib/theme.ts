@@ -38,7 +38,7 @@ export interface BlogTheme {
     }
   }
   layout: {
-    type: 'single_column' | 'two_column'
+    type: 'single_column'
     max_width: string
     header: {
       style: 'centered' | 'left_aligned' | 'minimal'
@@ -185,7 +185,7 @@ export function generateInlineCSS(theme: BlogTheme): string {
   }
 
   // 2. CSS variables
-  const effectiveMaxWidth = l.type === 'two_column' ? '1100px' : l.max_width
+  const effectiveMaxWidth = l.max_width
   css += `:root{--c-primary:${c.primary};--c-bg:${c.background};--c-surface:${c.surface};--c-text:${c.text};--c-text2:${c.text_secondary};--c-text-m:${c.text_muted};--c-border:${c.border};--c-link:${c.link};--c-link-h:${c.link_hover};--c-code-bg:${c.code_bg};--c-code:${c.code_text};--f-head:${ty.font_family.heading};--f-body:${ty.font_family.body};--f-code:${ty.font_family.code};--fs-base:${ty.font_size.base};--fs-sm:${ty.font_size.small};--fs-h1:${ty.font_size.h1};--fs-h2:${ty.font_size.h2};--fs-h3:${ty.font_size.h3};--lh:${ty.line_height.body};--lh-head:${ty.line_height.heading};--mw:${effectiveMaxWidth};--pad:24px}`
 
   // 3. Base styles
@@ -196,15 +196,6 @@ export function generateInlineCSS(theme: BlogTheme): string {
 
   // 4. Layout
   css += `.container{max-width:var(--mw);margin:0 auto;padding:0 var(--pad)}`
-  if (l.type === 'two_column') {
-    css += `.two-col{display:grid;grid-template-columns:1fr 280px;gap:2.5em;align-items:start}`
-    css += `.two-col__main{min-width:0}`
-    css += `.two-col__side{position:sticky;top:2em}`
-    css += `.sidebar-section{background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;padding:1.2em;margin-bottom:1.2em}`
-    css += `.sidebar-section h3{font-size:var(--fs-sm);font-weight:700;margin:0 0 0.8em;color:var(--c-text)}`
-    css += `@media(max-width:768px){.two-col{grid-template-columns:1fr}.two-col__side{position:static}}`
-  }
-
   // 5. Header
   css += `.header{border-bottom:1px solid var(--c-border)}`
   css += `.header-inner{max-width:var(--mw);margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1em var(--pad)}`

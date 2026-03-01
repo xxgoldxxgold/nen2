@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
-import BlogThemeWrapper, { getThemeLayout } from '@/components/blog/BlogThemeWrapper'
+import BlogThemeWrapper from '@/components/blog/BlogThemeWrapper'
 import Avatar from '@/components/blog/Avatar'
 
 export const dynamic = 'force-dynamic'
@@ -25,9 +25,6 @@ export default async function TagPage({ params }: Props) {
 
   const tag = await getPublicTag(tagName)
   const posts = tag ? await getPublicPostsByTag(tag.id, user.id) : []
-
-  const layout = getThemeLayout(user.blog_settings || {})
-  const isTwoCol = layout.type === 'two_column'
 
   const articleList = (
     <>
@@ -72,20 +69,6 @@ export default async function TagPage({ params }: Props) {
     </>
   )
 
-  const sidebar = (
-    <aside className="two-col__side">
-      <div className="sidebar-section">
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <Avatar src={user.avatar_url} name={user.display_name} size={48} />
-          <div>
-            <div style={{ fontWeight: 700 }}>{user.display_name}</div>
-            {user.bio && <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--c-text2)', margin: '0.3em 0 0' }}>{user.bio}</p>}
-          </div>
-        </div>
-      </div>
-    </aside>
-  )
-
   return (
     <BlogThemeWrapper blogSettings={user.blog_settings || {}} analyticsUserId={user.id}>
       <header className="header">
@@ -97,14 +80,7 @@ export default async function TagPage({ params }: Props) {
       </header>
 
       <div className="container" style={{ paddingTop: '2em', paddingBottom: '2em' }}>
-        {isTwoCol ? (
-          <div className="two-col">
-            <div className="two-col__main">{articleList}</div>
-            {sidebar}
-          </div>
-        ) : (
-          articleList
-        )}
+        {articleList}
       </div>
     </BlogThemeWrapper>
   )

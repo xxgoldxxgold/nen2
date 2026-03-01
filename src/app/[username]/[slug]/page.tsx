@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
-import BlogThemeWrapper, { getThemeLayout } from '@/components/blog/BlogThemeWrapper'
+import BlogThemeWrapper from '@/components/blog/BlogThemeWrapper'
 import Avatar from '@/components/blog/Avatar'
 
 export const dynamic = 'force-dynamic'
@@ -84,8 +84,6 @@ export default async function PostPage({ params, searchParams }: Props) {
   const displayExcerpt = translation?.excerpt || post.excerpt
 
   const readTime = Math.ceil((displayHtml.replace(/<[^>]*>/g, '').length || 0) / 500)
-  const layout = getThemeLayout(user.blog_settings || {})
-  const isTwoCol = layout.type === 'two_column'
 
   const langSwitcher = availableTranslations.length > 0 ? (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '1em' }}>
@@ -142,33 +140,6 @@ export default async function PostPage({ params, searchParams }: Props) {
     </article>
   )
 
-  const sidebar = (
-    <aside className="two-col__side">
-      <div className="sidebar-section">
-        <h3>著者</h3>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <Avatar src={user.avatar_url} name={user.display_name} size={40} />
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 'var(--fs-sm)' }}>{user.display_name}</div>
-            {user.bio && <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--c-text2)', margin: '0.2em 0 0' }}>{user.bio}</p>}
-          </div>
-        </div>
-      </div>
-      {tags.length > 0 && (
-        <div className="sidebar-section">
-          <h3>タグ</h3>
-          <div>
-            {tags.map((tag: string) => (
-              <Link key={tag} href={`/${username}/tag/${encodeURIComponent(tag)}`} className="tag" style={{ marginBottom: '0.3em' }}>
-                #{tag}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-    </aside>
-  )
-
   return (
     <BlogThemeWrapper blogSettings={user.blog_settings || {}} analyticsUserId={user.id} analyticsPostId={post.id}>
       <header className="header">
@@ -194,25 +165,14 @@ export default async function PostPage({ params, searchParams }: Props) {
           </div>
         )}
 
-        {isTwoCol ? (
-          <div className="two-col">
-            <div className="two-col__main">
-              {articleContent}
-            </div>
-            {sidebar}
+        {articleContent}
+        <div className="author-bio">
+          <Avatar src={user.avatar_url} name={user.display_name} size={48} className="author-bio__avatar" />
+          <div>
+            <div className="author-bio__name">{user.display_name}</div>
+            {user.bio && <p className="author-bio__description">{user.bio}</p>}
           </div>
-        ) : (
-          <>
-            {articleContent}
-            <div className="author-bio">
-              <Avatar src={user.avatar_url} name={user.display_name} size={48} className="author-bio__avatar" />
-              <div>
-                <div className="author-bio__name">{user.display_name}</div>
-                {user.bio && <p className="author-bio__description">{user.bio}</p>}
-              </div>
-            </div>
-          </>
-        )}
+        </div>
       </div>
 
       <footer className="footer">

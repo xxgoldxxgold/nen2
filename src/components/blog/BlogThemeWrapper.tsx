@@ -1,5 +1,4 @@
 import { migrateOldSettings } from '@/lib/theme'
-import type { BlogTheme } from '@/lib/theme'
 import type { ReactNode } from 'react'
 
 interface BlogThemeWrapperProps {
@@ -31,7 +30,3 @@ export default function BlogThemeWrapper({ blogSettings, children, analyticsUser
   )
 }
 
-export function getThemeLayout(blogSettings: Record<string, unknown>): BlogTheme['layout'] {
-  const theme = migrateOldSettings(blogSettings)
-  return theme.layout
-}

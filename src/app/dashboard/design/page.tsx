@@ -7,11 +7,6 @@ import { Send, Palette, Type, Layout, Sparkles, Eye, ImageIcon, Upload } from 'l
 import type { BlogTheme } from '@/lib/theme'
 import { DEFAULT_THEME, generateInlineCSS, migrateOldSettings } from '@/lib/theme'
 
-const layoutTypes = [
-  { id: 'single_column', name: 'シングル', desc: '1カラム、Medium風' },
-  { id: 'two_column', name: '2カラム', desc: 'サイドバー付き' },
-]
-
 const headerStyles = [
   { id: 'left_aligned', name: '左寄せ' },
   { id: 'centered', name: '中央' },
@@ -127,7 +122,7 @@ export default function DesignPage() {
     css += fontFaces.join('')
 
     // CSS variables + body styles on #tp
-    const mw = l.type === 'two_column' ? '1100px' : l.max_width
+    const mw = l.max_width
     css += `${P}{--c-primary:${c.primary};--c-bg:${c.background};--c-surface:${c.surface};--c-text:${c.text};--c-text2:${c.text_secondary};--c-text-m:${c.text_muted};--c-border:${c.border};--c-link:${c.link};--c-link-h:${c.link_hover};--c-code-bg:${c.code_bg};--c-code:${c.code_text};`
     css += `--f-head:${ty.font_family.heading};--f-body:${ty.font_family.body};--f-code:${ty.font_family.code};`
     css += `--fs-base:${ty.font_size.base};--fs-sm:${ty.font_size.small};--fs-h1:${ty.font_size.h1};--fs-h2:${ty.font_size.h2};--fs-h3:${ty.font_size.h3};`
@@ -153,15 +148,6 @@ export default function DesignPage() {
 
     // Header image
     css += `${P} .blog-header-image{width:100%;max-height:400px;overflow:hidden}${P} .blog-header-image img{width:100%;height:100%;object-fit:cover}`
-
-    // Two-column
-    if (l.type === 'two_column') {
-      css += `${P} .two-col{display:grid;grid-template-columns:1fr 280px;gap:2.5em;align-items:start}`
-      css += `${P} .two-col__main{min-width:0}`
-      css += `${P} .two-col__side{position:sticky;top:2em}`
-      css += `${P} .sidebar-section{background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;padding:1.2em;margin-bottom:1.2em}`
-      css += `${P} .sidebar-section h3{font-size:var(--fs-sm);font-weight:700;margin:0 0 0.8em;color:var(--c-text)}`
-    }
 
     // Article cards
     css += `${P} .article-list{display:flex;flex-direction:column;gap:1.5em}`
@@ -206,12 +192,12 @@ export default function DesignPage() {
     if (!el) return
     const observer = new ResizeObserver((entries) => {
       const w = entries[0].contentRect.width
-      const virtualWidth = settings.layout.type === 'two_column' ? 1100 : 780
+      const virtualWidth = 780
       setPreviewScale(Math.min(1, (w - 16) / virtualWidth))
     })
     observer.observe(el)
     return () => observer.disconnect()
-  }, [settings.layout.type])
+  }, [])
 
   const handleGenerateHeaderImage = async (opts?: { style?: string; colors?: BlogTheme['colors'] }) => {
     setGeneratingHeader(true)
@@ -494,23 +480,6 @@ export default function DesignPage() {
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
               <Layout className="h-5 w-5" /> レイアウト
             </h2>
-            <div className="mb-4 grid grid-cols-2 gap-2">
-              {layoutTypes.map(lt => (
-                <button
-                  key={lt.id}
-                  onClick={() => updateSettings('layout.type', lt.id)}
-                  className={`rounded-lg border-2 p-3 text-left ${
-                    settings.layout.type === lt.id
-                      ? 'border-blue-500 ring-2 ring-blue-200'
-                      : 'border-gray-200 hover:border-gray-300 dark:border-gray-700'
-                  }`}
-                >
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{lt.name}</p>
-                  <p className="text-xs text-gray-500">{lt.desc}</p>
-                </button>
-              ))}
-            </div>
-
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">ヘッダー</label>
             <div className="mb-4 flex gap-2">
               {headerStyles.map(h => (
@@ -674,7 +643,7 @@ export default function DesignPage() {
                 id="tp"
                 className="overflow-hidden rounded-lg"
                 style={{
-                  width: settings.layout.type === 'two_column' ? '1100px' : '780px',
+                  width: '780px',
                   zoom: previewScale,
                 }}
               >
@@ -702,75 +671,30 @@ export default function DesignPage() {
                   </div>
                 )}
                 <div className="container" style={{ paddingTop: '2em', paddingBottom: '2em' }}>
-                  {settings.layout.type === 'two_column' ? (
-                    <div className="two-col">
-                      <div className="two-col__main">
-                        <div className="article-list">
-                          {['サンプル記事タイトル', '2番目の記事です', '3番目の記事タイトル'].map((title, i) => (
-                            <div key={i} className="article-card">
-                              <div className="article-card__thumbnail">
-                                <img
-                                  src={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="338"><rect fill="${settings.colors.primary}20" width="600" height="338"/><rect fill="${settings.colors.primary}15" x="60" y="45" width="480" height="248" rx="12"/></svg>`)}`}
-                                  alt=""
-                                />
-                              </div>
-                              <div className="article-card__body">
-                                <h2 className="article-card__title">{title}</h2>
-                                <p className="article-card__excerpt">プレビュー用のサンプルテキストです。記事の概要がここに表示されます。</p>
-                                <div className="article-card__meta">2025年1月{15 + i}日</div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <aside className="two-col__side">
-                        <div className="sidebar-section">
-                          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: `${settings.colors.primary}30`, flexShrink: 0 }} />
-                            <div>
-                              <div style={{ fontWeight: 700 }}>{displayName || 'ユーザー名'}</div>
-                              <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--c-text2)', margin: '0.3em 0 0' }}>ブログの著者紹介文がここに入ります</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="sidebar-section">
-                          <h3>カテゴリー</h3>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5em', fontSize: 'var(--fs-sm)' }}>
-                            <a href="#" onClick={e => e.preventDefault()}>テクノロジー</a>
-                            <a href="#" onClick={e => e.preventDefault()}>デザイン</a>
-                            <a href="#" onClick={e => e.preventDefault()}>日記</a>
-                          </div>
-                        </div>
-                      </aside>
+                  <div className="author-bio" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0 }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: `${settings.colors.primary}30`, flexShrink: 0 }} />
+                    <div>
+                      <div className="author-bio__name">{displayName || 'ユーザー名'}</div>
+                      <p className="author-bio__description">ブログの著者紹介文がここに入ります</p>
                     </div>
-                  ) : (
-                    <>
-                      <div className="author-bio" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0 }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: `${settings.colors.primary}30`, flexShrink: 0 }} />
-                        <div>
-                          <div className="author-bio__name">{displayName || 'ユーザー名'}</div>
-                          <p className="author-bio__description">ブログの著者紹介文がここに入ります</p>
+                  </div>
+                  <div className="article-list">
+                    {['サンプル記事タイトル', '2番目の記事です'].map((title, i) => (
+                      <div key={i} className="article-card">
+                        <div className="article-card__thumbnail">
+                          <img
+                            src={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="338"><rect fill="${settings.colors.primary}20" width="600" height="338"/><rect fill="${settings.colors.primary}15" x="60" y="45" width="480" height="248" rx="12"/></svg>`)}`}
+                            alt=""
+                          />
+                        </div>
+                        <div className="article-card__body">
+                          <h2 className="article-card__title">{title}</h2>
+                          <p className="article-card__excerpt">プレビュー用のサンプルテキストです。記事の概要がここに表示されます。</p>
+                          <div className="article-card__meta">2025年1月{15 + i}日</div>
                         </div>
                       </div>
-                      <div className="article-list">
-                        {['サンプル記事タイトル', '2番目の記事です'].map((title, i) => (
-                          <div key={i} className="article-card">
-                            <div className="article-card__thumbnail">
-                              <img
-                                src={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="338"><rect fill="${settings.colors.primary}20" width="600" height="338"/><rect fill="${settings.colors.primary}15" x="60" y="45" width="480" height="248" rx="12"/></svg>`)}`}
-                                alt=""
-                              />
-                            </div>
-                            <div className="article-card__body">
-                              <h2 className="article-card__title">{title}</h2>
-                              <p className="article-card__excerpt">プレビュー用のサンプルテキストです。記事の概要がここに表示されます。</p>
-                              <div className="article-card__meta">2025年1月{15 + i}日</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                    ))}
+                  </div>
                 </div>
                 <div className="footer">
                   Powered by NEN2

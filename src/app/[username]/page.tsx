@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
-import BlogThemeWrapper, { getThemeLayout } from '@/components/blog/BlogThemeWrapper'
+import BlogThemeWrapper from '@/components/blog/BlogThemeWrapper'
 import Avatar from '@/components/blog/Avatar'
 
 export const dynamic = 'force-dynamic'
@@ -27,9 +27,6 @@ export default async function UserBlogPage({ params }: Props) {
   if (!user) notFound()
 
   const posts = await getPublicPosts(user.id)
-
-  const layout = getThemeLayout(user.blog_settings || {})
-  const isTwoCol = layout.type === 'two_column'
 
   const articleList = posts && posts.length > 0 ? (
     <div className="article-list">
@@ -63,20 +60,6 @@ export default async function UserBlogPage({ params }: Props) {
     <p style={{ textAlign: 'center', color: 'var(--c-text-m)', padding: '4em 0' }}>
       まだ記事が公開されていません
     </p>
-  )
-
-  const sidebar = (
-    <aside className="two-col__side">
-      <div className="sidebar-section">
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <Avatar src={user.avatar_url} name={user.display_name} size={48} />
-          <div>
-            <div style={{ fontWeight: 700 }}>{user.display_name}</div>
-            {user.bio && <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--c-text2)', margin: '0.3em 0 0' }}>{user.bio}</p>}
-          </div>
-        </div>
-      </div>
-    </aside>
   )
 
   return (
@@ -141,23 +124,14 @@ export default async function UserBlogPage({ params }: Props) {
       )}
 
       <div className="container" style={{ paddingTop: '2em', paddingBottom: '2em' }}>
-        {isTwoCol ? (
-          <div className="two-col">
-            <div className="two-col__main">{articleList}</div>
-            {sidebar}
+        <div className="author-bio" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0, marginBottom: '2em' }}>
+          <Avatar src={user.avatar_url} name={user.display_name} size={48} className="author-bio__avatar" />
+          <div>
+            <div className="author-bio__name">{user.display_name}</div>
+            {user.bio && <p className="author-bio__description">{user.bio}</p>}
           </div>
-        ) : (
-          <>
-            <div className="author-bio" style={{ borderTop: 'none', marginTop: 0, paddingTop: 0, marginBottom: '2em' }}>
-              <Avatar src={user.avatar_url} name={user.display_name} size={48} className="author-bio__avatar" />
-              <div>
-                <div className="author-bio__name">{user.display_name}</div>
-                {user.bio && <p className="author-bio__description">{user.bio}</p>}
-              </div>
-            </div>
-            {articleList}
-          </>
-        )}
+        </div>
+        {articleList}
       </div>
 
       <footer className="footer">

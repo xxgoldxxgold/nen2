@@ -109,7 +109,7 @@ export default async function PostPage({ params }: Props) {
   )
 
   return (
-    <BlogThemeWrapper blogSettings={user.blog_settings || {}}>
+    <BlogThemeWrapper blogSettings={user.blog_settings || {}} analyticsUserId={user.id} analyticsPostId={post.id}>
       <header className="header">
         <div className="header-inner">
           <Link href={`/${username}`} className="logo" style={{ fontSize: '1em' }}>

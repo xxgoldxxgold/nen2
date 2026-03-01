@@ -5,9 +5,11 @@ import type { ReactNode } from 'react'
 interface BlogThemeWrapperProps {
   blogSettings: Record<string, unknown>
   children: ReactNode
+  analyticsUserId?: string
+  analyticsPostId?: string
 }
 
-export default function BlogThemeWrapper({ blogSettings, children }: BlogThemeWrapperProps) {
+export default function BlogThemeWrapper({ blogSettings, children, analyticsUserId, analyticsPostId }: BlogThemeWrapperProps) {
   const theme = migrateOldSettings(blogSettings)
 
   return (
@@ -17,6 +19,14 @@ export default function BlogThemeWrapper({ blogSettings, children }: BlogThemeWr
       ))}
       <style dangerouslySetInnerHTML={{ __html: theme.css.inline }} />
       {children}
+      {analyticsUserId && (
+        <script
+          async
+          src="/nen2-analytics.js"
+          data-uid={analyticsUserId}
+          data-pid={analyticsPostId || ''}
+        />
+      )}
     </>
   )
 }

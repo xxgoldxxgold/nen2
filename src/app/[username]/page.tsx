@@ -80,7 +80,7 @@ export default async function UserBlogPage({ params }: Props) {
   )
 
   return (
-    <BlogThemeWrapper blogSettings={user.blog_settings || {}}>
+    <BlogThemeWrapper blogSettings={user.blog_settings || {}} analyticsUserId={user.id}>
       {(user.blog_settings as any)?.images?.header_image_url ? (
         <div className="blog-header-image" style={{ position: 'relative' }}>
           <Image

@@ -6,13 +6,15 @@ import { createDataClient } from '@/lib/supabase/data-client'
 import Link from 'next/link'
 import { FileText, Eye, Sparkles, PenSquare, Globe, ExternalLink } from 'lucide-react'
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton'
+import PostListClient from '@/components/dashboard/PostListClient'
+import type { Post } from '@/lib/types'
 
 type DashboardData = {
   profile: any
   postCount: number
   publishedCount: number
   draftCount: number
-  recentPosts: any[]
+  posts: Post[]
 }
 
 export default function DashboardPage() {
@@ -39,18 +41,19 @@ export default function DashboardPage() {
         profData = res.data
       }
 
-      const [statuses, recent] = await Promise.all([
-        db.from('blog_posts').select('status').eq('user_id', uid),
-        db.from('blog_posts').select('id, title, status, created_at, seo_score').eq('user_id', uid).order('updated_at', { ascending: false }).limit(5),
-      ])
+      const { data: postData } = await db
+        .from('blog_posts')
+        .select('*')
+        .eq('user_id', uid)
+        .order('updated_at', { ascending: false })
 
-      const posts = statuses.data || []
+      const allPosts = postData || []
       const result: DashboardData = {
         profile: profData,
-        postCount: posts.length,
-        publishedCount: posts.filter(p => p.status === 'published').length,
-        draftCount: posts.filter(p => p.status === 'draft').length,
-        recentPosts: recent.data || [],
+        postCount: allPosts.length,
+        publishedCount: allPosts.filter(p => p.status === 'published').length,
+        draftCount: allPosts.filter(p => p.status === 'draft').length,
+        posts: allPosts,
       }
       setData(result)
     }
@@ -77,7 +80,7 @@ export default function DashboardPage() {
     )
   }
 
-  const { profile, postCount, publishedCount, draftCount, recentPosts } = data
+  const { profile, postCount, publishedCount, draftCount, posts } = data
 
   return (
     <div className="space-y-8">
@@ -174,61 +177,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-        <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">最近の記事</h2>
-        </div>
-        {recentPosts.length > 0 ? (
-          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-            {recentPosts.map((post) => (
-              <li key={post.id}>
-                <Link
-                  href={`/dashboard/posts/${post.id}/edit`}
-                  className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
-                >
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{post.title}</p>
-                    <p className="mt-1 text-sm text-gray-500">
-                      {new Date(post.created_at).toLocaleDateString('ja-JP')}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {post.seo_score > 0 && (
-                      <span className={`text-sm font-medium ${
-                        post.seo_score >= 80 ? 'text-green-600' :
-                        post.seo_score >= 50 ? 'text-yellow-600' : 'text-red-600'
-                      }`}>
-                        SEO: {post.seo_score}
-                      </span>
-                    )}
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      post.status === 'published'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                        : post.status === 'scheduled'
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
-                    }`}>
-                      {post.status === 'published' ? '公開' : post.status === 'scheduled' ? '予約' : '下書き'}
-                    </span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="px-6 py-12 text-center">
-            <FileText className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600" />
-            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">まだ記事がありません</p>
-            <Link
-              href="/dashboard/posts/new"
-              className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-500"
-            >
-              <PenSquare className="h-4 w-4" />
-              最初の記事を作成する
-            </Link>
-          </div>
-        )}
-      </div>
+      <PostListClient posts={posts} username={profile?.username || ''} />
     </div>
   )
 }

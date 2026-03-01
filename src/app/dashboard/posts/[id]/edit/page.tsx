@@ -9,6 +9,7 @@ import { Save, Eye, EyeOff, Trash2, Sparkles, ArrowLeft, ChevronDown, Settings2,
 import Link from 'next/link'
 import type { Post } from '@/lib/types'
 import VersionHistory from '@/components/editor/VersionHistory'
+import TranslationPanel from '@/components/editor/TranslationPanel'
 
 const RichTextEditor = dynamic(() => import('@/components/editor/RichTextEditor'), { ssr: false })
 
@@ -444,6 +445,10 @@ export default function EditPostPage() {
               />
             </OptionItem>
           </OptionsPanel>
+
+          <div className="mt-3">
+            <TranslationPanel postId={postId} slug={slug} />
+          </div>
 
           <div className="mt-3">
             <VersionHistory postId={postId} onRollback={handleRollback} />

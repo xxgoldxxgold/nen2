@@ -56,6 +56,26 @@ export async function getPublicTag(tagName: string) {
   return data
 }
 
+export async function getPublicPostTranslation(postId: string, lang: string) {
+  const { data } = await supabasePublic
+    .from('blog_post_translations')
+    .select('language_code, title, content_html, excerpt, meta_description, status, published_at')
+    .eq('post_id', postId)
+    .eq('language_code', lang)
+    .eq('status', 'published')
+    .single()
+  return data
+}
+
+export async function getPublicPostTranslations(postId: string) {
+  const { data } = await supabasePublic
+    .from('blog_post_translations')
+    .select('language_code, title, status')
+    .eq('post_id', postId)
+    .eq('status', 'published')
+  return data || []
+}
+
 export async function getPublicPostsByTag(tagId: string, userId: string) {
   const { data: postTags } = await supabasePublic
     .from('blog_post_tags')

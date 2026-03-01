@@ -1,6 +1,24 @@
 export type Plan = 'free' | 'pro' | 'business'
 export type PostStatus = 'draft' | 'published' | 'scheduled'
-export type AIUsageType = 'generate' | 'rewrite' | 'suggest' | 'seo_analyze' | 'generate_image' | 'generate_header_image' | 'suggest_tags' | 'design' | 'field_assist' | 'analyze'
+export type AIUsageType = 'generate' | 'rewrite' | 'suggest' | 'seo_analyze' | 'generate_image' | 'generate_header_image' | 'suggest_tags' | 'design' | 'field_assist' | 'analyze' | 'translate'
+
+export type TranslationStatus = 'draft' | 'published' | 'needs_update'
+
+export interface PostTranslation {
+  id: string
+  post_id: string
+  user_id: string
+  language_code: string
+  title: string
+  content_html: string | null
+  meta_description: string | null
+  excerpt: string | null
+  status: TranslationStatus
+  translated_from_version: number | null
+  published_at: string | null
+  created_at: string
+  updated_at: string
+}
 
 export interface User {
   id: string

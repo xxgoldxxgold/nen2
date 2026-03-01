@@ -1,6 +1,6 @@
 export type Plan = 'free' | 'pro' | 'business'
 export type PostStatus = 'draft' | 'published' | 'scheduled'
-export type AIUsageType = 'generate' | 'rewrite' | 'suggest' | 'seo_analyze' | 'generate_image' | 'generate_header_image' | 'suggest_tags' | 'design' | 'field_assist'
+export type AIUsageType = 'generate' | 'rewrite' | 'suggest' | 'seo_analyze' | 'generate_image' | 'generate_header_image' | 'suggest_tags' | 'design' | 'field_assist' | 'analyze'
 
 export interface User {
   id: string
@@ -94,4 +94,36 @@ export interface AIUsageLog {
   type: AIUsageType
   tokens_used: number
   created_at: string
+}
+
+export type SuggestionCategory = 'seo' | 'content_freshness' | 'internal_links' | 'content_gap' | 'readability' | 'performance'
+export type SuggestionSeverity = 'info' | 'warning' | 'critical'
+export type SuggestionStatus = 'open' | 'accepted' | 'dismissed' | 'completed'
+
+export interface BlogSuggestion {
+  id: string
+  user_id: string
+  post_id: string | null
+  category: SuggestionCategory
+  severity: SuggestionSeverity
+  title: string
+  description: string
+  action_label: string | null
+  action_data: Record<string, unknown> | null
+  status: SuggestionStatus
+  created_at: string
+  resolved_at: string | null
+  post_title?: string
+}
+
+export interface AnalysisRun {
+  id: string
+  user_id: string
+  categories: string[]
+  posts_analyzed: number
+  suggestions_created: number
+  started_at: string
+  completed_at: string | null
+  status: 'running' | 'completed' | 'failed'
+  error_message: string | null
 }

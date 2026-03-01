@@ -1,5 +1,4 @@
 import { callClaude } from '@/lib/ai'
-import sharp from 'sharp'
 import { createClient } from '@supabase/supabase-js'
 
 const SVG_SYSTEM_PROMPT = `You are a professional graphic designer creating premium blog header banners using SVG.
@@ -104,37 +103,6 @@ function extractSVG(raw: string): string {
     throw new Error('Claude did not return valid SVG markup')
   }
   return match[0]
-}
-
-export async function svgToPng(svg: string, width: number, height: number): Promise<Buffer> {
-  // Ensure SVG has explicit width/height for sharp compatibility
-  let processedSvg = svg
-  if (!/<svg[^>]*\bwidth\s*=/.test(processedSvg)) {
-    processedSvg = processedSvg.replace('<svg', `<svg width="${width}" height="${height}"`)
-  }
-
-  const buf = Buffer.from(processedSvg)
-  try {
-    const result = await sharp(buf, { density: 150 })
-      .resize(width, height, { fit: 'cover' })
-      .png({ compressionLevel: 9, quality: 80 })
-      .toBuffer()
-    // Ensure proper Node.js Buffer (Vercel compatibility)
-    return Buffer.from(result)
-  } catch (err) {
-    console.error('sharp SVG→PNG conversion failed:', err)
-    const result = await sharp({
-      create: {
-        width,
-        height,
-        channels: 4,
-        background: { r: 200, g: 200, b: 200, alpha: 1 },
-      },
-    })
-      .png()
-      .toBuffer()
-    return Buffer.from(result)
-  }
 }
 
 function createStorageClient() {

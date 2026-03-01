@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
 import { checkRateLimit, logAIUsage } from '@/lib/ai'
-import { generateHeaderSVG, svgToPng, uploadImageToStorage } from '@/lib/image-gen'
+import { generateHeaderSVG, uploadImageToStorage } from '@/lib/image-gen'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
@@ -28,12 +28,10 @@ export async function POST(request: Request) {
     // Generate SVG via Claude
     const svg = await generateHeaderSVG(colors, blogName, style)
 
-    // Convert to PNG
-    const pngBuffer = await svgToPng(svg, 1200, 400)
-
-    // Upload to Supabase Storage (unique filename to bust CDN/browser cache)
-    const storagePath = `${user.id}/header-${Date.now()}.png`
-    const imageUrl = await uploadImageToStorage(pngBuffer, storagePath)
+    // Upload SVG directly to Supabase Storage (no sharp dependency needed)
+    const svgBuffer = Buffer.from(svg, 'utf-8')
+    const storagePath = `${user.id}/header-${Date.now()}.svg`
+    const imageUrl = await uploadImageToStorage(svgBuffer, storagePath, 'image/svg+xml')
 
     // Update blog_settings with image info
     const { data: userData } = await db

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
 import { checkRateLimit, logAIUsage } from '@/lib/ai'
-import { generateCoverSVG, svgToPng, uploadImageToStorage } from '@/lib/image-gen'
+import { generateCoverSVG, uploadImageToStorage } from '@/lib/image-gen'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -35,13 +35,11 @@ export async function POST(request: Request) {
     // Generate SVG via Claude
     const svg = await generateCoverSVG(theme, title)
 
-    // Convert to PNG
-    const pngBuffer = await svgToPng(svg, 1200, 630)
-
-    // Upload to Supabase Storage
-    const fileName = postId ? `posts/${postId}.png` : `posts/cover-${Date.now()}.png`
+    // Upload SVG directly to Supabase Storage (no sharp dependency needed)
+    const svgBuffer = Buffer.from(svg, 'utf-8')
+    const fileName = postId ? `posts/${postId}.svg` : `posts/cover-${Date.now()}.svg`
     const storagePath = `${user.id}/${fileName}`
-    const imageUrl = await uploadImageToStorage(pngBuffer, storagePath)
+    const imageUrl = await uploadImageToStorage(svgBuffer, storagePath, 'image/svg+xml')
 
     await logAIUsage(db, user.id, 'generate_image')
 

@@ -32,6 +32,7 @@ export default function EditPostPage() {
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [loading, setLoading] = useState(true)
+  const [fieldAssisting, setFieldAssisting] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -179,6 +180,32 @@ export default function EditPostPage() {
     return undefined
   }
 
+  const handleFieldAssist = async (fieldName: string) => {
+    if (!contentHtml && !title) { alert('タイトルか本文を入力してください'); return }
+    setFieldAssisting(fieldName)
+    try {
+      const res = await fetch('/api/ai/field-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field_name: fieldName, title, content: contentHtml }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || 'AI生成に失敗しました')
+        setFieldAssisting(null)
+        return
+      }
+      const data = await res.json()
+      if (fieldName === 'excerpt') setExcerpt(data.generated_value)
+      else if (fieldName === 'meta_description') setMetaDescription(data.generated_value)
+      else if (fieldName === 'tags') setTags(prev => [...new Set([...prev, ...data.generated_value])])
+    } catch (err) {
+      console.error('Field assist error:', err)
+      alert('AI生成に失敗しました')
+    }
+    setFieldAssisting(null)
+  }
+
   const handleRollback = (updatedPost: any) => {
     setTitle(updatedPost.title)
     setContent(updatedPost.content || '')
@@ -298,7 +325,20 @@ export default function EditPostPage() {
               />
             </OptionItem>
 
-            <OptionItem label="抄録" tooltip="記事一覧やSNSシェア時に表示される要約文。空欄なら本文から自動生成されます">
+            <OptionItem
+              label="抄録"
+              tooltip="記事一覧やSNSシェア時に表示される要約文。空欄なら本文から自動生成されます"
+              action={
+                <button
+                  onClick={() => handleFieldAssist('excerpt')}
+                  disabled={fieldAssisting === 'excerpt' || !contentHtml}
+                  className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-700 disabled:opacity-50"
+                >
+                  <Sparkles className={`h-3 w-3 ${fieldAssisting === 'excerpt' ? 'animate-spin' : ''}`} />
+                  AI生成
+                </button>
+              }
+            >
               <textarea
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
@@ -341,7 +381,20 @@ export default function EditPostPage() {
               </button>
             </OptionItem>
 
-            <OptionItem label="meta description" tooltip="Google検索結果に表示される説明文（最大160文字）。SEOに直結する重要項目です">
+            <OptionItem
+              label="meta description"
+              tooltip="Google検索結果に表示される説明文（最大160文字）。SEOに直結する重要項目です"
+              action={
+                <button
+                  onClick={() => handleFieldAssist('meta_description')}
+                  disabled={fieldAssisting === 'meta_description' || !contentHtml}
+                  className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-700 disabled:opacity-50"
+                >
+                  <Sparkles className={`h-3 w-3 ${fieldAssisting === 'meta_description' ? 'animate-spin' : ''}`} />
+                  AI生成
+                </button>
+              }
+            >
               <textarea
                 value={metaDescription}
                 onChange={(e) => setMetaDescription(e.target.value)}
@@ -353,7 +406,20 @@ export default function EditPostPage() {
               <p className="mt-1 text-right text-xs text-gray-400">{metaDescription.length}/160</p>
             </OptionItem>
 
-            <OptionItem label={`タグ${tags.length > 0 ? ` (${tags.length})` : ''}`} tooltip="記事の分類用タグ。読者がタグで記事を絞り込めます">
+            <OptionItem
+              label={`タグ${tags.length > 0 ? ` (${tags.length})` : ''}`}
+              tooltip="記事の分類用タグ。読者がタグで記事を絞り込めます"
+              action={
+                <button
+                  onClick={() => handleFieldAssist('tags')}
+                  disabled={fieldAssisting === 'tags' || !contentHtml}
+                  className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-700 disabled:opacity-50"
+                >
+                  <Sparkles className={`h-3 w-3 ${fieldAssisting === 'tags' ? 'animate-spin' : ''}`} />
+                  AI提案
+                </button>
+              }
+            >
               <div className="flex flex-wrap gap-2">
                 {tags.map(tag => (
                   <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">

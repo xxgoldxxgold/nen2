@@ -1,26 +1,18 @@
 import { callClaude } from '@/lib/ai'
 import { createClient } from '@supabase/supabase-js'
 
-const SVG_SYSTEM_PROMPT = `You are a professional graphic designer creating premium blog header banners using SVG.
+const SVG_SYSTEM_PROMPT = `You are a graphic designer. Output ONLY raw SVG markup — no explanation, no markdown, no backticks.
 
-CRITICAL RULES:
-- Output ONLY the raw SVG markup. No explanation, no markdown code blocks, no backticks.
-- Allowed elements: svg, rect, circle, ellipse, path, line, polygon, polyline, g, defs, linearGradient, radialGradient, stop, text, tspan, clipPath
-- NEVER use: image, foreignObject, filter, use, symbol, mask, pattern, animate, script, style
-- Always include xmlns="http://www.w3.org/2000/svg", viewBox, width, height
-- Text must use font-family="sans-serif"
-
-DESIGN PHILOSOPHY — ABSTRACT MOOD ART, NOT ILLUSTRATION:
-- NEVER try to draw recognizable objects like trees, flowers, or buildings — they look childish in SVG
-- Instead, create ABSTRACT, ATMOSPHERIC compositions using:
-  * Rich multi-stop gradients (5-8 stops) for dramatic sky/mood effects
-  * Flowing bezier curve paths that suggest waves, horizons, hills, or clouds abstractly
-  * Layered translucent shapes at varying opacities (0.05 to 0.6) for depth and atmosphere
-  * Organic curved bands of color that flow across the banner
-- Think of Dribbble/Behance hero banners: sophisticated gradient art, not clip art
-- Use 4-6 gradient definitions with harmonious color transitions
-- Create at least 8-12 overlapping path layers for richness
-- The result should look like premium wallpaper art or a polished app header`
+RULES:
+- Output starts with <svg and ends with </svg>
+- Include xmlns="http://www.w3.org/2000/svg", viewBox, width, height
+- Allowed: svg, rect, circle, ellipse, path, line, polygon, g, defs, linearGradient, radialGradient, stop, text, tspan, clipPath
+- NEVER use: image, foreignObject, filter, use, symbol, mask, pattern, animate, script, style, feGaussianBlur
+- Text: font-family="sans-serif"
+- Keep paths simple — use L, Q, C commands with few control points
+- Maximum 3 gradients, each with 2-4 stops
+- Maximum 6 shapes/paths total
+- Prioritize clean, valid SVG over complexity`
 
 export async function generateHeaderSVG(
   theme: { primary: string; background: string; surface: string; text: string },
@@ -28,81 +20,149 @@ export async function generateHeaderSVG(
   style?: string,
 ): Promise<string> {
   const styleDesc = style
-    ? `Mood/atmosphere: ${style}
-Evoke this mood through COLOR CHOICES and ABSTRACT FLOWING SHAPES only. Do NOT draw literal objects.
-For example: "Hawaii" = warm coral-to-turquoise gradients with flowing wave-like curves; "Forest" = deep green layered gradient with organic curved shapes suggesting canopy.`
-    : `Create an elegant, sophisticated gradient composition.`
+    ? `Color mood: ${style}. Use colors that evoke this mood.`
+    : `Use elegant gradient colors.`
 
-  const prompt = `Create a blog header banner SVG: width="1200" height="400" viewBox="0 0 1200 400".
+  const prompt = `Create a blog header SVG: width="1200" height="400" viewBox="0 0 1200 400".
 
-Base palette:
-- Primary: ${theme.primary}
-- Background: ${theme.background}
-- Surface: ${theme.surface}
-- Text: ${theme.text}
-Derive 3-4 additional harmonious colors to create rich gradients.
+Colors: primary=${theme.primary}, bg=${theme.background}, surface=${theme.surface}, text=${theme.text}
 
 ${styleDesc}
 
-Composition:
-- Full-width abstract gradient art (NOT illustration, NOT clip art)
-- Start with a dramatic multi-stop gradient background
-- Add 8-12 overlapping flowing path shapes with bezier curves (C/S commands) at various opacities
-- Paths should create smooth, organic wave-like or cloud-like bands of color flowing horizontally
-- Layer translucent shapes to create depth and atmospheric feel
-- Blog name "${blogName}" centered vertically and horizontally, 48px, font-family="sans-serif", fill with good contrast color
-- Add a subtle semi-transparent rounded rect (rx="12") behind the text for readability
-- IMPORTANT: width="1200" height="400" on the svg element`
+Design:
+1. Full-width gradient background (2-3 gradient stops)
+2. 3-5 overlapping translucent curved shapes for depth (use simple Q or C bezier curves, opacity 0.1-0.4)
+3. Blog name "${blogName}" centered, 48px, font-family="sans-serif", with semi-transparent rect behind it for readability
 
-  // Retry once if SVG extraction fails
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const raw = await callClaude(SVG_SYSTEM_PROMPT, prompt, 6000, 'claude-haiku-4-5-20251001')
+Keep SVG simple and under 3000 characters. Output the <svg>...</svg> directly.`
+
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
+      const raw = await callClaude(SVG_SYSTEM_PROMPT, prompt, 4096, 'claude-haiku-4-5-20251001')
       return extractSVG(raw)
     } catch (e) {
-      if (attempt === 1) throw e
-      console.warn('SVG generation attempt', attempt + 1, 'failed, retrying...')
+      console.warn(`Header SVG attempt ${attempt + 1} failed:`, e instanceof Error ? e.message : e)
+      if (attempt === 2) {
+        // Return a simple fallback SVG instead of throwing
+        return generateFallbackHeaderSVG(theme, blogName)
+      }
     }
   }
-  throw new Error('SVG generation failed after retries')
+  return generateFallbackHeaderSVG(theme, blogName)
 }
 
 export async function generateCoverSVG(
   theme: { primary: string; background: string; surface: string; text: string },
   title: string,
 ): Promise<string> {
-  const prompt = `Create a blog article cover image SVG: width="1200" height="630" viewBox="0 0 1200 630".
+  const prompt = `Create a blog cover image SVG: width="1200" height="630" viewBox="0 0 1200 630".
 
-Color palette:
-- Primary: ${theme.primary}
-- Background: ${theme.background}
-- Surface: ${theme.surface}
-- Text: ${theme.text}
+Colors: primary=${theme.primary}, bg=${theme.background}, surface=${theme.surface}, text=${theme.text}
 
-Design requirements:
-- Elegant, professional banner suitable for social media sharing
-- Layered gradient background with decorative geometric and organic elements
-- Use path elements with curves for visual interest
-- Article title "${title}" in lower-third area, 36-44px, font-family="sans-serif", fill="${theme.text}"
-- Semi-transparent background behind title text for readability
-- IMPORTANT: width="1200" height="630" on the svg element`
+Design:
+1. Gradient background (2-3 stops)
+2. 2-4 decorative shapes (circles, rounded rects, or simple curves) at various opacities
+3. Article title "${title}" near center-bottom, 36px, font-family="sans-serif", fill="${theme.text}"
+4. Semi-transparent rounded rect behind the title text
 
-  const svg = await callClaude(SVG_SYSTEM_PROMPT, prompt, 6000, 'claude-haiku-4-5-20251001')
-  return extractSVG(svg)
+Keep SVG simple and under 3000 characters. Output the <svg>...</svg> directly.`
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const raw = await callClaude(SVG_SYSTEM_PROMPT, prompt, 4096, 'claude-haiku-4-5-20251001')
+      return extractSVG(raw)
+    } catch (e) {
+      console.warn(`Cover SVG attempt ${attempt + 1} failed:`, e instanceof Error ? e.message : e)
+      if (attempt === 2) {
+        return generateFallbackCoverSVG(theme, title)
+      }
+    }
+  }
+  return generateFallbackCoverSVG(theme, title)
 }
 
 function extractSVG(raw: string): string {
   if (!raw || raw.trim().length === 0) {
-    throw new Error('Claude returned empty response')
+    throw new Error('Empty response from Claude')
   }
-  // Strip markdown code blocks if present
-  const cleaned = raw.replace(/^```(?:svg|xml|html)?\s*/im, '').replace(/\s*```\s*$/im, '').trim()
+
+  // Strip markdown code blocks (various formats)
+  let cleaned = raw
+    .replace(/^```(?:svg|xml|html|markup)?\s*\n?/gim, '')
+    .replace(/\n?\s*```\s*$/gim, '')
+    .trim()
+
+  // Try to extract complete SVG
   const match = cleaned.match(/<svg[\s\S]*<\/svg>/i)
-  if (!match) {
-    console.error('Failed to extract SVG. Response length:', raw.length, 'First 500 chars:', raw.slice(0, 500))
-    throw new Error('Claude did not return valid SVG markup')
+  if (match) {
+    return match[0]
   }
-  return match[0]
+
+  // SVG might be truncated — try to find opening <svg and close it
+  const svgStart = cleaned.match(/<svg[\s\S]*/i)
+  if (svgStart) {
+    let partial = svgStart[0]
+    // Close any unclosed tags and add </svg>
+    if (!partial.includes('</svg>')) {
+      // Remove any trailing incomplete tag
+      partial = partial.replace(/<[^>]*$/, '')
+      partial += '</svg>'
+    }
+    // Verify it now has both opening and closing
+    if (/<svg[\s\S]*<\/svg>/i.test(partial)) {
+      console.warn('SVG was truncated, auto-closed. Length:', partial.length)
+      return partial
+    }
+  }
+
+  console.error('SVG extraction failed. Response length:', raw.length, 'First 300 chars:', raw.slice(0, 300))
+  throw new Error('Could not extract valid SVG from Claude response')
+}
+
+// Fallback SVGs — always succeed, no API call needed
+function generateFallbackHeaderSVG(
+  theme: { primary: string; background: string; surface: string; text: string },
+  blogName: string,
+): string {
+  // Escape XML special characters in blog name
+  const safeName = blogName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${theme.background}"/>
+      <stop offset="100%" stop-color="${theme.surface}"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#bg)"/>
+  <circle cx="200" cy="100" r="180" fill="${theme.primary}" opacity="0.08"/>
+  <circle cx="1000" cy="300" r="220" fill="${theme.primary}" opacity="0.06"/>
+  <circle cx="600" cy="350" r="150" fill="${theme.primary}" opacity="0.05"/>
+  <rect x="350" y="165" width="500" height="70" rx="12" fill="${theme.surface}" opacity="0.7"/>
+  <text x="600" y="210" text-anchor="middle" font-family="sans-serif" font-size="42" font-weight="700" fill="${theme.text}">${safeName}</text>
+</svg>`
+}
+
+function generateFallbackCoverSVG(
+  theme: { primary: string; background: string; surface: string; text: string },
+  title: string,
+): string {
+  const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  // Truncate title for SVG (long titles break layout)
+  const displayTitle = safeTitle.length > 40 ? safeTitle.slice(0, 37) + '...' : safeTitle
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${theme.background}"/>
+      <stop offset="50%" stop-color="${theme.surface}"/>
+      <stop offset="100%" stop-color="${theme.background}"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="150" cy="100" r="200" fill="${theme.primary}" opacity="0.07"/>
+  <circle cx="1050" cy="530" r="250" fill="${theme.primary}" opacity="0.05"/>
+  <rect x="100" y="440" width="1000" height="80" rx="16" fill="${theme.surface}" opacity="0.8"/>
+  <text x="600" y="492" text-anchor="middle" font-family="sans-serif" font-size="36" font-weight="700" fill="${theme.text}">${displayTitle}</text>
+</svg>`
 }
 
 function createStorageClient() {
@@ -113,15 +173,12 @@ function createStorageClient() {
 }
 
 export async function uploadImageToStorage(
-  pngBuffer: Buffer,
+  buffer: Buffer,
   storagePath: string,
-  contentType: string = 'image/png',
+  contentType: string = 'image/svg+xml',
 ): Promise<string> {
   const db = createStorageClient()
-
-  // Ensure we pass a proper Uint8Array for Supabase compatibility
-  const uploadData = new Uint8Array(pngBuffer)
-  console.log('Uploading to storage:', storagePath, 'size:', uploadData.length, 'bytes')
+  const uploadData = new Uint8Array(buffer)
 
   const { error } = await db.storage
     .from('blog-images')

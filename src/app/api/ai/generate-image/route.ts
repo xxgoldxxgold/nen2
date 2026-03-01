@@ -48,7 +48,10 @@ export async function POST(request: Request) {
       message: 'アイキャッチ画像を生成しました',
     })
   } catch (error) {
-    console.error('Image generate error:', error)
-    return NextResponse.json({ error: '画像生成に失敗しました' }, { status: 500 })
+    const msg = error instanceof Error ? error.message : String(error)
+    console.error('Image generate error:', msg, error)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
+
+export const maxDuration = 60

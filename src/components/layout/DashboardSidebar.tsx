@@ -10,12 +10,16 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  BookOpen,
+  Lightbulb,
 } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'ダッシュボード', icon: LayoutDashboard },
   { href: '/dashboard/new', label: '新規記事', icon: PenSquare },
   { href: '/dashboard/analytics', label: 'アクセス解析', icon: BarChart3 },
+  { href: '/dashboard/context-notes', label: 'コンテキスト', icon: BookOpen },
+  { href: '/dashboard/suggestions', label: '改善提案', icon: Lightbulb },
   { href: '/dashboard/settings', label: '設定', icon: Settings },
 ]
 

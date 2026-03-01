@@ -3,9 +3,13 @@
 import { useState, useEffect, useCallback, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Editor from '@/components/Editor'
-import { Save, Eye, ArrowLeft, Tags, ChevronDown, ChevronUp, Trash2, Sparkles } from 'lucide-react'
+import { Save, Eye, ArrowLeft, Tags, ChevronDown, ChevronUp, Trash2, Sparkles, History } from 'lucide-react'
 import TooltipHelp from '@/components/TooltipHelp'
 import SeoSection from '@/components/SeoSection'
+import VersionHistory from '@/components/VersionHistory'
+import FieldAssistButton from '@/components/FieldAssistButton'
+import ContextNotesPanel from '@/components/ContextNotesPanel'
+import TranslationPanel from '@/components/TranslationPanel'
 
 export default function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -25,7 +29,12 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
   const [aiImageLoading, setAiImageLoading] = useState(false)
   const [imagePrompt, setImagePrompt] = useState('')
   const [seoScore, setSeoScore] = useState(0)
+  const [seoTitle, setSeoTitle] = useState('')
+  const [ogTitle, setOgTitle] = useState('')
+  const [ogDescription, setOgDescription] = useState('')
   const [message, setMessage] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
+  const [contextPrompt, setContextPrompt] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -40,6 +49,9 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
       setMetaDescription(post.meta_description || '')
       setTags(post.tags || [])
       setSeoScore(post.seo_score || 0)
+      setSeoTitle(post.seo_title || '')
+      setOgTitle(post.og_title || '')
+      setOgDescription(post.og_description || '')
       setLoading(false)
     }
     load()
@@ -69,6 +81,9 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
           status: newStatus || status,
           cover_image_url: coverImageUrl || null,
           meta_description: metaDescription || null,
+          seo_title: seoTitle || null,
+          og_title: ogTitle || null,
+          og_description: ogDescription || null,
           tags,
           seo_score: seoScore,
         }),
@@ -196,6 +211,9 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
         className="w-full border-0 bg-transparent text-3xl font-bold text-gray-900 placeholder:text-gray-300 focus:outline-none dark:text-white"
       />
 
+      {/* Context Notes Panel */}
+      <ContextNotesPanel onContextChange={setContextPrompt} />
+
       {/* Editor */}
       <Editor
         value={content}
@@ -312,6 +330,7 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
             <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
               メタ説明文
               <TooltipHelp text="Googleの検索結果に表示される説明文です。160文字以内で記事内容を簡潔に要約しましょう。" />
+              <FieldAssistButton field="meta_description" title={title} content={content} onApply={setMetaDescription} contextNotes={contextPrompt} />
             </label>
             <textarea
               value={metaDescription}
@@ -323,6 +342,49 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
             />
             <p className="mt-1 text-right text-xs text-gray-400">{metaDescription.length}/160</p>
           </div>
+          <div>
+            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+              SEOタイトル
+              <TooltipHelp text="検索エンジン向けのタイトルです。60文字以内推奨。" />
+              <FieldAssistButton field="seo_title" title={title} content={content} onApply={setSeoTitle} contextNotes={contextPrompt} />
+            </label>
+            <input
+              type="text"
+              value={seoTitle}
+              onChange={(e) => setSeoTitle(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              placeholder="SEO用タイトル（60文字以内）"
+              maxLength={60}
+            />
+          </div>
+          <div>
+            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+              OGタイトル
+              <TooltipHelp text="SNSシェア時に表示されるタイトルです。" />
+              <FieldAssistButton field="og_title" title={title} content={content} onApply={setOgTitle} contextNotes={contextPrompt} />
+            </label>
+            <input
+              type="text"
+              value={ogTitle}
+              onChange={(e) => setOgTitle(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              placeholder="OGタイトル"
+            />
+          </div>
+          <div>
+            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+              OG説明文
+              <TooltipHelp text="SNSシェア時に表示される説明文です。" />
+              <FieldAssistButton field="og_description" title={title} content={content} onApply={setOgDescription} contextNotes={contextPrompt} />
+            </label>
+            <textarea
+              value={ogDescription}
+              onChange={(e) => setOgDescription(e.target.value)}
+              rows={2}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              placeholder="OG説明文"
+            />
+          </div>
           <SeoSection
             title={title}
             content={content}
@@ -330,6 +392,34 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
             slug={slug}
             seoScore={seoScore}
             onScoreChange={setSeoScore}
+          />
+        </div>
+      )}
+
+      {/* Translation */}
+      <TranslationPanel postId={id} />
+
+      {/* Version History */}
+      <button
+        onClick={() => setShowHistory(!showHistory)}
+        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400"
+      >
+        <History className="h-4 w-4" />
+        {showHistory ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        バージョン履歴
+      </button>
+
+      {showHistory && (
+        <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+          <VersionHistory
+            postId={id}
+            currentContent={content}
+            onRollback={(newTitle, newContent, newMeta) => {
+              setTitle(newTitle)
+              setContent(newContent)
+              if (newMeta) setMetaDescription(newMeta)
+              setMessage('ロールバックしました')
+            }}
           />
         </div>
       )}

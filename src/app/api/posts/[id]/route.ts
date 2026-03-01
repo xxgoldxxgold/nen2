@@ -3,6 +3,7 @@ import { createDataServer } from '@/lib/supabase/data-server'
 import { renderMarkdown, extractExcerpt } from '@/lib/markdown'
 import { callClaude, checkRateLimit, logAIUsage } from '@/lib/ai'
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -43,7 +44,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
 
   const body = await request.json()
-  const { title, content, slug, status, cover_image_url, meta_description, seo_score, tags } = body
+  const { title, content, slug, status, cover_image_url, meta_description, seo_score, seo_title, og_title, og_description, tags } = body
 
   const updateData: Record<string, unknown> = {}
   if (title !== undefined) updateData.title = title
@@ -58,6 +59,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   if (status !== undefined) updateData.status = status
   if (cover_image_url !== undefined) updateData.cover_image_url = cover_image_url
   if (seo_score !== undefined) updateData.seo_score = seo_score
+  if (seo_title !== undefined) updateData.seo_title = seo_title
+  if (og_title !== undefined) updateData.og_title = og_title
+  if (og_description !== undefined) updateData.og_description = og_description
 
   // Auto-generate meta_description from excerpt if empty
   if (meta_description) {
@@ -88,6 +92,38 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data) return NextResponse.json({ error: '記事が見つかりません' }, { status: 404 })
+
+  // Auto-save version (skip if content unchanged)
+  if (content !== undefined && data.content) {
+    const contentHash = crypto.createHash('sha256').update(data.content).digest('hex').slice(0, 16)
+    const { data: existingHash } = await db
+      .from('nen2_post_versions')
+      .select('id')
+      .eq('post_id', id)
+      .eq('content_hash', contentHash)
+      .limit(1)
+
+    if (!existingHash || existingHash.length === 0) {
+      const { data: latestV } = await db
+        .from('nen2_post_versions')
+        .select('version_number')
+        .eq('post_id', id)
+        .order('version_number', { ascending: false })
+        .limit(1)
+
+      const changeType = status === 'published' ? 'publish' : 'manual_save'
+      await db.from('nen2_post_versions').insert({
+        post_id: id,
+        version_number: (latestV?.[0]?.version_number || 0) + 1,
+        title: data.title,
+        content: data.content,
+        meta_description: data.meta_description,
+        change_type: changeType,
+        content_hash: contentHash,
+        word_count: data.content.replace(/\s+/g, '').length,
+      })
+    }
+  }
 
   // Sync tags — auto-generate via AI if empty
   let finalTags: string[] | null = null

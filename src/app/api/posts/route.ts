@@ -5,6 +5,7 @@ import { slugify } from '@/lib/utils'
 import { validateUsername } from '@/lib/reserved-usernames'
 import { callClaude, checkRateLimit, logAIUsage } from '@/lib/ai'
 import { NextResponse } from 'next/server'
+import crypto from 'crypto'
 
 // GET /api/posts — list user's posts
 export async function GET() {
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { title, content, status, cover_image_url, meta_description, tags } = body
+  const { title, content, status, cover_image_url, meta_description, seo_title, og_title, og_description, tags } = body
 
   if (!title) return NextResponse.json({ error: 'タイトルは必須です' }, { status: 400 })
 
@@ -91,6 +92,9 @@ export async function POST(request: Request) {
     excerpt,
     cover_image_url: cover_image_url || null,
     meta_description: finalMetaDescription,
+    seo_title: seo_title || null,
+    og_title: og_title || null,
+    og_description: og_description || null,
     status: status || 'draft',
   }
 
@@ -126,6 +130,22 @@ export async function POST(request: Request) {
   if (finalTags && finalTags.length > 0) {
     const { syncPostTags } = await import('@/lib/tags')
     await syncPostTags(db, data.id, finalTags)
+  }
+
+  // Save initial version
+  if (data.content) {
+    const contentHash = crypto.createHash('sha256').update(data.content).digest('hex').slice(0, 16)
+    await db.from('nen2_post_versions').insert({
+      post_id: data.id,
+      version_number: 1,
+      title: data.title,
+      content: data.content,
+      meta_description: finalMetaDescription,
+      change_type: status === 'published' ? 'publish' : 'manual_save',
+      change_summary: '初回作成',
+      content_hash: contentHash,
+      word_count: data.content.replace(/\s+/g, '').length,
+    })
   }
 
   return NextResponse.json({ ...data, meta_description: finalMetaDescription, tags: finalTags || [] }, { status: 201 })

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
 import { streamClaude, checkRateLimit, logAIUsage } from '@/lib/ai'
+import { buildContextPrompt } from '@/lib/context-notes'
 import { NextResponse } from 'next/server'
 
 // Status marker byte: chunks starting with \x00 are status messages
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
   const allowed = await checkRateLimit(db, user.id, 'generate')
   if (!allowed) return NextResponse.json({ error: 'AI利用回数の上限に達しました' }, { status: 429 })
 
-  const systemPrompt = `あなたは読者を惹きつける一流のブログライター兼編集者です。以下のルールに従って、人間が書いたような自然で読み応えのあるブログ記事をMarkdown形式で生成してください。
+  let systemPrompt = `あなたは読者を惹きつける一流のブログライター兼編集者です。以下のルールに従って、人間が書いたような自然で読み応えのあるブログ記事をMarkdown形式で生成してください。
 
 ## 最重要ルール
 - まずWeb検索ツールを使って、テーマに関する最新情報を調べてください。人物名、企業名、製品名、時事テーマなどは必ず検索してから書いてください
@@ -54,6 +55,12 @@ export async function POST(request: Request) {
 
 ## トーン
 ${tone || 'プロフェッショナルだが親しみやすく、読みやすい'}`
+
+  // Inject context notes
+  const contextPrompt = await buildContextPrompt(db, user.id)
+  if (contextPrompt) {
+    systemPrompt += contextPrompt
+  }
 
   const userPrompt = `以下のタイトルでブログ記事を書いてください。
 

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
 import { callClaude, checkRateLimit, logAIUsage } from '@/lib/ai'
+import { buildContextPrompt } from '@/lib/context-notes'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -24,8 +25,12 @@ export async function POST(request: Request) {
   }
 
   try {
+    let sysPrompt = 'あなたはプロの編集者です。与えられたテキストを指示に従ってリライトしてください。リライト結果のみを出力し、説明は不要です。'
+    const contextPrompt = await buildContextPrompt(db, user.id)
+    if (contextPrompt) sysPrompt += contextPrompt
+
     const result = await callClaude(
-      'あなたはプロの編集者です。与えられたテキストを指示に従ってリライトしてください。リライト結果のみを出力し、説明は不要です。',
+      sysPrompt,
       `以下のテキストを${stylePrompts[style] || stylePrompts.improve}:\n\n${text}`,
       1024
     )

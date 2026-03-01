@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { BarChart3, Eye, Users, Globe, Monitor, Smartphone, Tablet } from 'lucide-react'
+import { BarChart3, Eye, Users, Globe, Monitor, Smartphone, Tablet, Clock, BookCheck, ArrowDownToLine } from 'lucide-react'
 
 interface ViewRow {
   id: string
@@ -11,6 +11,9 @@ interface ViewRow {
   device_type: string | null
   browser: string | null
   country: string | null
+  event_type: string | null
+  duration_seconds: number | null
+  scroll_depth: number | null
   created_at: string
 }
 
@@ -94,7 +97,20 @@ export default function AnalyticsPage() {
     }
     const countries = Object.entries(countryCounts).sort((a, b) => b[1] - a[1]).slice(0, 10)
 
-    return { todayPV, uniqueSessions, dailyData, maxDaily, postRanking, referrers, deviceCounts, browsers, countries }
+    // Extended insights
+    const pageviews = views.filter(v => !v.event_type || v.event_type === 'pageview')
+    const withDuration = pageviews.filter(v => v.duration_seconds != null && v.duration_seconds > 0)
+    const avgDuration = withDuration.length > 0
+      ? Math.round(withDuration.reduce((sum, v) => sum + (v.duration_seconds || 0), 0) / withDuration.length)
+      : 0
+    const withScroll = pageviews.filter(v => v.scroll_depth != null)
+    const avgScrollDepth = withScroll.length > 0
+      ? Math.round(withScroll.reduce((sum, v) => sum + (v.scroll_depth || 0), 0) / withScroll.length)
+      : 0
+    const readComplete = pageviews.filter(v => v.scroll_depth === 100).length
+    const readCompleteRate = pageviews.length > 0 ? Math.round((readComplete / pageviews.length) * 100) : 0
+
+    return { todayPV, uniqueSessions, dailyData, maxDaily, postRanking, referrers, deviceCounts, browsers, countries, avgDuration, avgScrollDepth, readCompleteRate }
   }, [views, days])
 
   const DeviceIcon = ({ type }: { type: string }) => {
@@ -141,6 +157,13 @@ export default function AnalyticsPage() {
         <Card label={`${days}日間PV`} value={views.length} icon={<BarChart3 className="h-5 w-5 text-green-500" />} />
         <Card label="ユニーク訪問者" value={stats.uniqueSessions} icon={<Users className="h-5 w-5 text-purple-500" />} />
         <Card label="全期間PV" value={totalAllTime} icon={<Globe className="h-5 w-5 text-orange-500" />} />
+      </div>
+
+      {/* Extended insights */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card label="平均滞在時間" value={stats.avgDuration} suffix="秒" icon={<Clock className="h-5 w-5 text-cyan-500" />} />
+        <Card label="読了率" value={stats.readCompleteRate} suffix="%" icon={<BookCheck className="h-5 w-5 text-emerald-500" />} />
+        <Card label="平均スクロール" value={stats.avgScrollDepth} suffix="%" icon={<ArrowDownToLine className="h-5 w-5 text-amber-500" />} />
       </div>
 
       {/* Daily chart */}
@@ -248,14 +271,16 @@ export default function AnalyticsPage() {
   )
 }
 
-function Card({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
+function Card({ label, value, icon, suffix }: { label: string; value: number; icon: React.ReactNode; suffix?: string }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
       <div className="flex items-center justify-between">
         <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
         {icon}
       </div>
-      <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{value.toLocaleString()}</p>
+      <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
+        {value.toLocaleString()}{suffix && <span className="text-sm font-normal text-gray-500 ml-0.5">{suffix}</span>}
+      </p>
     </div>
   )
 }

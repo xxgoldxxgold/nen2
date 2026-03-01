@@ -11,10 +11,10 @@ export async function GET(request: NextRequest) {
   const days = parseInt(request.nextUrl.searchParams.get('days') || '30')
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
 
-  // All page views for this user's posts
+  // All page views for this user's posts (with extended fields)
   const { data: views } = await db
     .from('nen2_page_views')
-    .select('id, post_id, session_id, path, referrer, device_type, browser, country, created_at')
+    .select('id, post_id, session_id, path, referrer, device_type, browser, country, event_type, duration_seconds, scroll_depth, created_at')
     .eq('user_id', user.id)
     .gte('created_at', since)
     .order('created_at', { ascending: false })

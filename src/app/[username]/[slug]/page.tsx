@@ -1,15 +1,15 @@
-import { getPublicProfile, getPublicPost, getPublicPostTags, getPublicLikeCount, getPublicFollowCounts } from '@/lib/supabase/public'
+import { getPublicProfile, getPublicPost, getPublicPostTags, getPublicLikeCount, getPublicFollowCounts, supabasePublic } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 import { formatDate } from '@/lib/utils'
-import { estimateReadTime } from '@/lib/markdown'
+import { estimateReadTime, renderMarkdown } from '@/lib/markdown'
 import ShareButtons from '@/components/ShareButtons'
 import LikeButton from '@/components/blog/LikeButton'
 import CommentSection from '@/components/blog/CommentSection'
 import FollowButton from '@/components/blog/FollowButton'
-import PageViewTracker from '@/components/blog/PageViewTracker'
+import InsightsTracker from '@/components/blog/InsightsTracker'
 
 export const revalidate = 3600
 export const dynamicParams = true
@@ -33,7 +33,12 @@ export async function generateStaticParams() {
   return params
 }
 
-type Props = { params: Promise<{ username: string; slug: string }> }
+type Props = { params: Promise<{ username: string; slug: string }>; searchParams: Promise<{ lang?: string }> }
+
+const langLabels: Record<string, string> = {
+  ja: '日本語', en: 'English', zh: '中文(简体)', 'zh-tw': '中文(繁體)',
+  ko: '韓国語', es: 'Español', fr: 'Français', de: 'Deutsch', pt: 'Português',
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username, slug } = await params
@@ -62,8 +67,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function PostPage({ params }: Props) {
+export default async function PostPage({ params, searchParams }: Props) {
   const { username, slug } = await params
+  const { lang } = await searchParams
   const decodedUsername = decodeURIComponent(username)
   const decodedSlug = decodeURIComponent(slug)
 
@@ -78,7 +84,29 @@ export default async function PostPage({ params }: Props) {
     getPublicLikeCount(post.id),
     getPublicFollowCounts(profile.id),
   ])
-  const plainText = post.content_html?.replace(/<[^>]*>/g, '') || ''
+
+  // Check for translations
+  let displayTitle = post.title
+  let displayHtml = post.content_html || ''
+  let activeLang: string | null = null
+
+  // Get available published translations
+  const { data: translations } = await supabasePublic
+    .from('nen2_post_translations')
+    .select('language_code, title, content, status')
+    .eq('post_id', post.id)
+    .eq('status', 'published')
+
+  if (lang && translations) {
+    const tr = translations.find(t => t.language_code === lang)
+    if (tr) {
+      displayTitle = tr.title
+      displayHtml = renderMarkdown(tr.content)
+      activeLang = lang
+    }
+  }
+
+  const plainText = displayHtml.replace(/<[^>]*>/g, '') || ''
   const readTime = estimateReadTime(plainText)
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://nen2.com'
   const pageUrl = `${baseUrl}/${username}/${slug}`
@@ -99,8 +127,30 @@ export default async function PostPage({ params }: Props) {
         </div>
       )}
 
+      {/* Language switcher */}
+      {translations && translations.length > 0 && (
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '1em', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.75em', color: '#888' }}>🌐</span>
+          <a
+            href={`/${username}/${slug}`}
+            style={{ fontSize: '0.75em', color: activeLang ? '#666' : '#2563eb', textDecoration: 'none' }}
+          >
+            原文
+          </a>
+          {translations.map((tr: any) => (
+            <a
+              key={tr.language_code}
+              href={`/${username}/${slug}?lang=${tr.language_code}`}
+              style={{ fontSize: '0.75em', color: activeLang === tr.language_code ? '#2563eb' : '#666', textDecoration: 'none' }}
+            >
+              {langLabels[tr.language_code] || tr.language_code}
+            </a>
+          ))}
+        </div>
+      )}
+
       <article>
-        <h1 className="article__title">{post.title}</h1>
+        <h1 className="article__title">{displayTitle}</h1>
 
         <div className="article__meta">
           {profile.avatar_url ? (
@@ -133,7 +183,7 @@ export default async function PostPage({ params }: Props) {
           </div>
         )}
 
-        <div className="article__content" dangerouslySetInnerHTML={{ __html: post.content_html || '' }} />
+        <div className="article__content" dangerouslySetInnerHTML={{ __html: displayHtml }} />
       </article>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -169,7 +219,7 @@ export default async function PostPage({ params }: Props) {
       </div>
 
       <CommentSection articleId={post.id} initialComments={[]} />
-      <PageViewTracker postId={post.id} authorId={profile.id} />
+      <InsightsTracker postId={post.id} authorId={profile.id} />
     </div>
   )
 }

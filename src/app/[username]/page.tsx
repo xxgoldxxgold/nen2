@@ -6,7 +6,7 @@ import type { Metadata } from 'next'
 import { formatDate } from '@/lib/utils'
 import FollowButton from '@/components/blog/FollowButton'
 
-export const revalidate = 3600
+export const revalidate = 7200
 export const dynamicParams = true
 export async function generateStaticParams() {
   const { supabasePublic } = await import('@/lib/supabase/public')

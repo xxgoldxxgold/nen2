@@ -35,6 +35,10 @@ export async function GET(
 
   const accentColor = profile.accent_color || '#5c6b4a'
 
+  const headers = {
+    'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+  }
+
   return new ImageResponse(
     (
       <div
@@ -100,6 +104,7 @@ export async function GET(
     {
       width: 1200,
       height: 630,
+      headers,
     }
   )
 }

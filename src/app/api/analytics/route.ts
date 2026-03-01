@@ -41,5 +41,7 @@ export async function GET(request: NextRequest) {
     views: views || [],
     totalAllTime: totalAllTime || 0,
     articles: articleMap,
+  }, {
+    headers: { 'Cache-Control': 'private, max-age=60' },
   })
 }

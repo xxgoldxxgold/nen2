@@ -1,4 +1,4 @@
-import { getPublicProfile, getPublicPost, getPublicPostTags, getPublicLikeCount, getPublicComments, getPublicFollowCounts } from '@/lib/supabase/public'
+import { getPublicProfile, getPublicPost, getPublicPostTags, getPublicLikeCount, getPublicFollowCounts } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -73,10 +73,9 @@ export default async function PostPage({ params }: Props) {
   const post = await getPublicPost(profile.id, decodedSlug)
   if (!post) notFound()
 
-  const [tags, likeCount, comments, followCounts] = await Promise.all([
+  const [tags, likeCount, followCounts] = await Promise.all([
     getPublicPostTags(post.id),
     getPublicLikeCount(post.id),
-    getPublicComments(post.id),
     getPublicFollowCounts(profile.id),
   ])
   const plainText = post.content_html?.replace(/<[^>]*>/g, '') || ''
@@ -169,7 +168,7 @@ export default async function PostPage({ params }: Props) {
         />
       </div>
 
-      <CommentSection articleId={post.id} initialComments={comments} />
+      <CommentSection articleId={post.id} initialComments={[]} />
       <PageViewTracker postId={post.id} authorId={profile.id} />
     </div>
   )

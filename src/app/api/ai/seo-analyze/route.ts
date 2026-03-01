@@ -38,7 +38,9 @@ ${content?.replace(/<[^>]*>/g, '').slice(0, 3000) || '（なし）'}`,
     await logAIUsage(db, user.id, 'seo_analyze')
 
     try {
-      const parsed = JSON.parse(result)
+      // Claudeがコードブロック付きで返す場合があるので、JSONだけ抽出する
+      const jsonMatch = result.match(/\{[\s\S]*\}/)
+      const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : result)
       return NextResponse.json(parsed)
     } catch {
       return NextResponse.json({ score: 50, suggestions: ['SEO分析結果の解析に失敗しました'] })

@@ -9,6 +9,7 @@ import ShareButtons from '@/components/ShareButtons'
 import LikeButton from '@/components/blog/LikeButton'
 import CommentSection from '@/components/blog/CommentSection'
 import FollowButton from '@/components/blog/FollowButton'
+import PageViewTracker from '@/components/blog/PageViewTracker'
 
 export const revalidate = 3600
 export const dynamicParams = true
@@ -169,6 +170,7 @@ export default async function PostPage({ params }: Props) {
       </div>
 
       <CommentSection articleId={post.id} initialComments={comments} />
+      <PageViewTracker postId={post.id} authorId={profile.id} />
     </div>
   )
 }

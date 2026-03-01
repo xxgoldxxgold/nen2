@@ -84,6 +84,19 @@ export interface Comment {
   updated_at: string
 }
 
+export interface PageView {
+  id: string
+  post_id: string
+  user_id: string
+  session_id: string | null
+  path: string | null
+  referrer: string | null
+  device_type: string | null
+  browser: string | null
+  country: string | null
+  created_at: string
+}
+
 export interface CommentWithAuthor extends Comment {
   author_name: string
   author_avatar_url: string | null

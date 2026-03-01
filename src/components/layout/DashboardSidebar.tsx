@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard,
   PenSquare,
+  BarChart3,
   Settings,
   LogOut,
 } from 'lucide-react'
@@ -14,6 +15,7 @@ import {
 const navItems = [
   { href: '/dashboard', label: 'ダッシュボード', icon: LayoutDashboard },
   { href: '/dashboard/new', label: '新規記事', icon: PenSquare },
+  { href: '/dashboard/analytics', label: 'アクセス解析', icon: BarChart3 },
   { href: '/dashboard/settings', label: '設定', icon: Settings },
 ]
 

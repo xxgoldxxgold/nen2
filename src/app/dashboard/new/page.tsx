@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Editor from '@/components/Editor'
 import { Save, Eye, ArrowLeft, Tags, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
+import TooltipHelp from '@/components/TooltipHelp'
+import SeoSection from '@/components/SeoSection'
 
 export default function NewPostPage() {
   const router = useRouter()
@@ -18,6 +20,7 @@ export default function NewPostPage() {
   const [aiTagLoading, setAiTagLoading] = useState(false)
   const [aiImageLoading, setAiImageLoading] = useState(false)
   const [imagePrompt, setImagePrompt] = useState('')
+  const [seoScore, setSeoScore] = useState(0)
 
   const handleImageUpload = useCallback(async (file: File) => {
     const formData = new FormData()
@@ -42,6 +45,7 @@ export default function NewPostPage() {
           cover_image_url: coverImageUrl || null,
           meta_description: metaDescription || null,
           tags,
+          seo_score: seoScore,
         }),
       })
       if (!res.ok) {
@@ -153,6 +157,7 @@ export default function NewPostPage() {
         <div className="flex items-center gap-2 mb-3">
           <Tags className="h-4 w-4 text-gray-500" />
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">タグ</h3>
+          <TooltipHelp text="記事の分類に使います。関連キーワードを追加すると読者が記事を見つけやすくなり、SEOにも効果的です。" />
           <button
             onClick={handleSuggestTags}
             disabled={aiTagLoading}
@@ -196,7 +201,10 @@ export default function NewPostPage() {
       {showMeta && (
         <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">カバー画像URL</label>
+            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+              カバー画像URL
+              <TooltipHelp text="記事一覧やSNSシェア時に表示されるサムネイルです。推奨サイズ: 1200x630px。" />
+            </label>
             <input
               type="url"
               value={coverImageUrl}
@@ -237,7 +245,10 @@ export default function NewPostPage() {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">メタ説明文</label>
+            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+              メタ説明文
+              <TooltipHelp text="Googleの検索結果に表示される説明文です。160文字以内で記事内容を簡潔に要約しましょう。" />
+            </label>
             <textarea
               value={metaDescription}
               onChange={(e) => setMetaDescription(e.target.value)}
@@ -248,6 +259,13 @@ export default function NewPostPage() {
             />
             <p className="mt-1 text-right text-xs text-gray-400">{metaDescription.length}/160</p>
           </div>
+          <SeoSection
+            title={title}
+            content={content}
+            metaDescription={metaDescription}
+            seoScore={seoScore}
+            onScoreChange={setSeoScore}
+          />
         </div>
       )}
     </div>

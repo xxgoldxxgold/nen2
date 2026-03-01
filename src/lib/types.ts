@@ -54,6 +54,26 @@ export interface Tag {
   name: string
 }
 
+export type VersionChangeType = 'manual_save' | 'auto_save' | 'publish' | 'unpublish' | 'ai_generate' | 'ai_rewrite' | 'rollback'
+
+export interface PostVersion {
+  id: string
+  post_id: string
+  user_id: string
+  version_number: number
+  title: string
+  content: string | null
+  content_html: string | null
+  excerpt: string | null
+  meta_description: string | null
+  tags: string[] | null
+  change_type: VersionChangeType
+  change_summary: string | null
+  content_hash: string | null
+  word_count: number
+  created_at: string
+}
+
 export interface AIUsageLog {
   id: string
   user_id: string

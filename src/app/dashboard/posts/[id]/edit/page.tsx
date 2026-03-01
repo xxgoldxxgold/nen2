@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic'
 import { Save, Eye, EyeOff, Trash2, Sparkles, ArrowLeft, ChevronDown, Settings2, HelpCircle } from 'lucide-react'
 import Link from 'next/link'
 import type { Post } from '@/lib/types'
+import VersionHistory from '@/components/editor/VersionHistory'
 
 const RichTextEditor = dynamic(() => import('@/components/editor/RichTextEditor'), { ssr: false })
 
@@ -128,6 +129,25 @@ export default function EditPostPage() {
       await db.from('blog_post_tags').insert({ post_id: postId, tag_id: tagId })
     }
 
+    // Create version after save
+    try {
+      await fetch(`/api/posts/${postId}/versions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          content: typeof content === 'string' ? content : JSON.stringify(content),
+          content_html: contentHtml,
+          excerpt,
+          meta_description: metaDescription,
+          tags,
+          change_type: finalStatus === 'published' ? 'publish' : 'manual_save',
+        }),
+      })
+    } catch (err) {
+      console.error('Version creation error:', err)
+    }
+
     setSaving(false)
   }
 
@@ -157,6 +177,15 @@ export default function EditPostPage() {
     }
     setAiLoading(false)
     return undefined
+  }
+
+  const handleRollback = (updatedPost: any) => {
+    setTitle(updatedPost.title)
+    setContent(updatedPost.content || '')
+    setContentHtml(updatedPost.content_html || '')
+    setExcerpt(updatedPost.excerpt || '')
+    setMetaDescription(updatedPost.meta_description || '')
+    setPost(updatedPost)
   }
 
   if (loading) {
@@ -349,6 +378,10 @@ export default function EditPostPage() {
               />
             </OptionItem>
           </OptionsPanel>
+
+          <div className="mt-3">
+            <VersionHistory postId={postId} onRollback={handleRollback} />
+          </div>
         </div>
       </div>
     </div>

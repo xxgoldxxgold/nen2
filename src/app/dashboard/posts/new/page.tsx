@@ -111,6 +111,25 @@ export default function NewPostPage() {
       }
     }
 
+    // Create initial version
+    try {
+      await fetch(`/api/posts/${data.id}/versions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title || '無題の記事',
+          content: JSON.stringify(content),
+          content_html: contentHtml,
+          excerpt: excerpt || contentHtml?.replace(/<[^>]*>/g, '').slice(0, 300) || '',
+          meta_description: metaDescription || null,
+          tags,
+          change_type: finalStatus === 'published' ? 'publish' : 'manual_save',
+        }),
+      })
+    } catch (err) {
+      console.error('Version creation error:', err)
+    }
+
     setSaving(false)
     router.push(`/dashboard/posts/${data.id}/edit`)
   }

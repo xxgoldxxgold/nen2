@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
 import { checkRateLimit, logAIUsage } from '@/lib/ai'
-import { generateHeaderSVG, uploadImageToStorage } from '@/lib/image-gen'
+import { generateHeaderSVG } from '@/lib/image-gen'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
@@ -25,15 +25,12 @@ export async function POST(request: Request) {
       text: theme?.text || '#1f1c18',
     }
 
-    // Generate SVG via Claude
     const svg = await generateHeaderSVG(colors, blogName, style)
 
-    // Upload SVG directly to Supabase Storage (no sharp dependency needed)
-    const svgBuffer = Buffer.from(svg, 'utf-8')
-    const storagePath = `${user.id}/header-${Date.now()}.svg`
-    const imageUrl = await uploadImageToStorage(svgBuffer, storagePath, 'image/svg+xml')
+    // Store as data URI — no Supabase Storage needed
+    const imageUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
 
-    // Update blog_settings with image info
+    // Update blog_settings
     const { data: userData } = await db
       .from('users')
       .select('blog_settings')
@@ -47,12 +44,12 @@ export async function POST(request: Request) {
         ...currentSettings.images,
         header_svg: svg,
         header_image_url: imageUrl,
+        header_photo_credit: undefined,
       },
     }
 
     await db.from('users').update({ blog_settings: updatedSettings }).eq('id', user.id)
 
-    // Revalidate public blog page cache
     const { data: userInfo } = await db.from('users').select('username').eq('id', user.id).single()
     if (userInfo?.username) {
       revalidatePath(`/${userInfo.username}`, 'layout')

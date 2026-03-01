@@ -66,14 +66,11 @@ export default async function UserBlogPage({ params }: Props) {
     <BlogThemeWrapper blogSettings={user.blog_settings || {}} analyticsUserId={user.id}>
       {(user.blog_settings as any)?.images?.header_image_url ? (
         <div className="blog-header-image" style={{ position: 'relative' }}>
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={(user.blog_settings as any).images.header_image_url}
             alt={`${user.display_name}のブログ`}
-            width={1200}
-            height={400}
-            sizes="100vw"
-            priority
-            style={{ width: '100%', height: 'auto', display: 'block' }}
+            style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '400px', objectFit: 'cover' }}
           />
           <div style={{
             position: 'absolute',

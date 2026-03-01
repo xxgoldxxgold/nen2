@@ -1,5 +1,4 @@
 import { callClaude } from '@/lib/ai'
-import { createClient } from '@supabase/supabase-js'
 
 const SVG_SYSTEM_PROMPT = `You are a graphic designer. Output ONLY raw SVG markup — no explanation, no markdown, no backticks.
 
@@ -43,7 +42,6 @@ Keep SVG simple and under 3000 characters. Output the <svg>...</svg> directly.`
     } catch (e) {
       console.warn(`Header SVG attempt ${attempt + 1} failed:`, e instanceof Error ? e.message : e)
       if (attempt === 2) {
-        // Return a simple fallback SVG instead of throwing
         return generateFallbackHeaderSVG(theme, blogName)
       }
     }
@@ -86,46 +84,40 @@ function extractSVG(raw: string): string {
     throw new Error('Empty response from Claude')
   }
 
-  // Strip markdown code blocks (various formats)
   let cleaned = raw
     .replace(/^```(?:svg|xml|html|markup)?\s*\n?/gim, '')
     .replace(/\n?\s*```\s*$/gim, '')
     .trim()
 
-  // Try to extract complete SVG
   const match = cleaned.match(/<svg[\s\S]*<\/svg>/i)
-  if (match) {
-    return match[0]
-  }
+  if (match) return match[0]
 
-  // SVG might be truncated — try to find opening <svg and close it
+  // SVG might be truncated — try to close it
   const svgStart = cleaned.match(/<svg[\s\S]*/i)
   if (svgStart) {
     let partial = svgStart[0]
-    // Close any unclosed tags and add </svg>
     if (!partial.includes('</svg>')) {
-      // Remove any trailing incomplete tag
       partial = partial.replace(/<[^>]*$/, '')
       partial += '</svg>'
     }
-    // Verify it now has both opening and closing
     if (/<svg[\s\S]*<\/svg>/i.test(partial)) {
-      console.warn('SVG was truncated, auto-closed. Length:', partial.length)
+      console.warn('SVG was truncated, auto-closed.')
       return partial
     }
   }
 
-  console.error('SVG extraction failed. Response length:', raw.length, 'First 300 chars:', raw.slice(0, 300))
-  throw new Error('Could not extract valid SVG from Claude response')
+  throw new Error('Could not extract valid SVG from response')
 }
 
-// Fallback SVGs — always succeed, no API call needed
+function escapeXml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 function generateFallbackHeaderSVG(
   theme: { primary: string; background: string; surface: string; text: string },
   blogName: string,
 ): string {
-  // Escape XML special characters in blog name
-  const safeName = blogName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  const safeName = escapeXml(blogName)
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -146,8 +138,7 @@ function generateFallbackCoverSVG(
   theme: { primary: string; background: string; surface: string; text: string },
   title: string,
 ): string {
-  const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-  // Truncate title for SVG (long titles break layout)
+  const safeTitle = escapeXml(title)
   const displayTitle = safeTitle.length > 40 ? safeTitle.slice(0, 37) + '...' : safeTitle
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
@@ -163,35 +154,4 @@ function generateFallbackCoverSVG(
   <rect x="100" y="440" width="1000" height="80" rx="16" fill="${theme.surface}" opacity="0.8"/>
   <text x="600" y="492" text-anchor="middle" font-family="sans-serif" font-size="36" font-weight="700" fill="${theme.text}">${displayTitle}</text>
 </svg>`
-}
-
-function createStorageClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_NEN2_DB_URL!,
-    process.env.NEN2_DB_SERVICE_ROLE_KEY!,
-  )
-}
-
-export async function uploadImageToStorage(
-  buffer: Buffer,
-  storagePath: string,
-  contentType: string = 'image/svg+xml',
-): Promise<string> {
-  const db = createStorageClient()
-  const uploadData = new Uint8Array(buffer)
-
-  const { error } = await db.storage
-    .from('blog-images')
-    .upload(storagePath, uploadData, {
-      contentType,
-      upsert: true,
-    })
-
-  if (error) {
-    console.error('Storage upload error:', JSON.stringify(error))
-    throw new Error(`Storage upload failed: ${error.message}`)
-  }
-
-  const { data } = db.storage.from('blog-images').getPublicUrl(storagePath)
-  return data.publicUrl
 }

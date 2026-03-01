@@ -1,11 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
 import { checkRateLimit, logAIUsage } from '@/lib/ai'
-import { uploadImageToStorage } from '@/lib/image-gen'
 import { searchPexelsPhoto } from '@/lib/pexels'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
-import sharp from 'sharp'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -22,23 +20,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Search Pexels for a landscape photo
     const photo = await searchPexelsPhoto(query)
 
-    // Download the photo
-    const photoRes = await fetch(photo.src.landscape)
-    if (!photoRes.ok) throw new Error('Failed to download photo from Pexels')
-    const photoBuffer = Buffer.from(await photoRes.arrayBuffer())
-
-    // Resize to 1200x400 JPEG
-    const jpegBuffer = await sharp(photoBuffer)
-      .resize(1200, 400, { fit: 'cover' })
-      .jpeg({ quality: 85 })
-      .toBuffer()
-
-    // Upload to Storage
-    const storagePath = `${user.id}/header-photo-${Date.now()}.jpg`
-    const imageUrl = await uploadImageToStorage(Buffer.from(jpegBuffer), storagePath, 'image/jpeg')
+    // Use Pexels CDN URL directly — no download/upload needed
+    const imageUrl = photo.src.landscape
 
     // Update blog_settings
     const { data: userData } = await db
@@ -63,7 +48,6 @@ export async function POST(request: Request) {
 
     await db.from('users').update({ blog_settings: updatedSettings }).eq('id', user.id)
 
-    // Revalidate public blog page
     const { data: userInfo } = await db.from('users').select('username').eq('id', user.id).single()
     if (userInfo?.username) {
       revalidatePath(`/${userInfo.username}`, 'layout')

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
 import { checkRateLimit, logAIUsage } from '@/lib/ai'
-import { generateCoverSVG, uploadImageToStorage } from '@/lib/image-gen'
+import { generateCoverSVG } from '@/lib/image-gen'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -17,7 +17,6 @@ export async function POST(request: Request) {
   if (!title) return NextResponse.json({ error: 'タイトルが必要です' }, { status: 400 })
 
   try {
-    // Get user's theme colors
     const { data: userData } = await db
       .from('users')
       .select('blog_settings')
@@ -32,14 +31,10 @@ export async function POST(request: Request) {
       text: settings?.colors?.text || '#1f1c18',
     }
 
-    // Generate SVG via Claude
     const svg = await generateCoverSVG(theme, title)
 
-    // Upload SVG directly to Supabase Storage (no sharp dependency needed)
-    const svgBuffer = Buffer.from(svg, 'utf-8')
-    const fileName = postId ? `posts/${postId}.svg` : `posts/cover-${Date.now()}.svg`
-    const storagePath = `${user.id}/${fileName}`
-    const imageUrl = await uploadImageToStorage(svgBuffer, storagePath, 'image/svg+xml')
+    // Store as data URI — no Supabase Storage needed
+    const imageUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
 
     await logAIUsage(db, user.id, 'generate_image')
 

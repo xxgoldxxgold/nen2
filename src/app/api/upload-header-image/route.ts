@@ -1,9 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createDataServer } from '@/lib/supabase/data-server'
-import { uploadImageToStorage } from '@/lib/image-gen'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
-import sharp from 'sharp'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -28,17 +26,8 @@ export async function POST(request: Request) {
 
   try {
     const arrayBuf = await file.arrayBuffer()
-    const inputBuffer = Buffer.from(arrayBuf)
-
-    // Resize to 1200x400 JPEG
-    const jpegBuffer = await sharp(inputBuffer)
-      .resize(1200, 400, { fit: 'cover' })
-      .jpeg({ quality: 85 })
-      .toBuffer()
-
-    // Upload to Storage
-    const storagePath = `${user.id}/header-upload-${Date.now()}.jpg`
-    const imageUrl = await uploadImageToStorage(Buffer.from(jpegBuffer), storagePath, 'image/jpeg')
+    const base64 = Buffer.from(arrayBuf).toString('base64')
+    const imageUrl = `data:${file.type};base64,${base64}`
 
     // Update blog_settings
     const { data: userData } = await db
@@ -60,7 +49,6 @@ export async function POST(request: Request) {
 
     await db.from('users').update({ blog_settings: updatedSettings }).eq('id', user.id)
 
-    // Revalidate public blog page
     const { data: userInfo } = await db.from('users').select('username').eq('id', user.id).single()
     if (userInfo?.username) {
       revalidatePath(`/${userInfo.username}`, 'layout')

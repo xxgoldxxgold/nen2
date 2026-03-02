@@ -1,6 +1,6 @@
 import { callClaude } from '@/lib/ai'
 
-const SVG_SYSTEM_PROMPT = `You are a graphic designer. Output ONLY raw SVG markup — no explanation, no markdown, no backticks.
+const SVG_SYSTEM_PROMPT = `You are a talented graphic designer specializing in SVG logos and icons. Output ONLY raw SVG markup — no explanation, no markdown, no backticks.
 
 RULES:
 - Output starts with <svg and ends with </svg>
@@ -8,10 +8,11 @@ RULES:
 - Allowed: svg, rect, circle, ellipse, path, line, polygon, g, defs, linearGradient, radialGradient, stop, text, tspan, clipPath
 - NEVER use: image, foreignObject, filter, use, symbol, mask, pattern, animate, script, style, feGaussianBlur
 - Text: font-family="sans-serif"
-- Keep paths simple — use L, Q, C commands with few control points
-- Maximum 3 gradients, each with 2-4 stops
-- Maximum 6 shapes/paths total
-- Prioritize clean, valid SVG over complexity`
+- Paths can use M, L, Q, C, A, Z commands for expressive shapes
+- Up to 4 gradients, each with 2-4 stops
+- Up to 10 shapes/paths for logos and icons
+- Be CREATIVE and UNIQUE — avoid generic "letter on a square" designs
+- Use opacity, overlapping shapes, and gradients for visual depth`
 
 export async function generateHeaderSVG(
   theme: { primary: string; background: string; surface: string; text: string },
@@ -79,32 +80,50 @@ Keep SVG simple and under 3000 characters. Output the <svg>...</svg> directly.`
   return generateFallbackCoverSVG(theme, title)
 }
 
+// Pick a random design approach for variety
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
 export async function generateLogoSVG(
   theme: { primary: string; background: string; surface: string; text: string },
   blogName: string,
   style?: string,
 ): Promise<string> {
   const firstChar = blogName.charAt(0).toUpperCase()
-  const styleDesc = style
-    ? `Design style: ${style}.`
-    : `Design a modern, memorable logo mark.`
 
-  const prompt = `Create a blog logo SVG: width="400" height="400" viewBox="0 0 400 400".
+  const logoApproaches = [
+    `A shield or badge shape with the letter "${firstChar}" cut out as negative space`,
+    `Overlapping circles forming a Venn-diagram pattern with "${firstChar}" at the intersection`,
+    `A hexagon with a gradient fill and "${firstChar}" in bold white`,
+    `A speech bubble or book shape with "${firstChar}" integrated`,
+    `Two or three layered shapes (circle behind a rounded square) creating depth, with "${firstChar}" on top`,
+    `A diamond/rhombus rotated 45° with "${firstChar}" centered inside`,
+    `An abstract pen nib or quill shape incorporating "${firstChar}"`,
+    `A circle with a creative cutout/notch that suggests the letter "${firstChar}"`,
+    `Stacked horizontal bars forming an abstract "${firstChar}" shape`,
+    `A leaf or organic shape with "${firstChar}" embedded in it`,
+  ]
 
-Colors: primary=${theme.primary}, bg=${theme.background}, surface=${theme.surface}, text=${theme.text}
-Blog name: "${blogName}" (first letter: "${firstChar}")
+  const approach = style || pickRandom(logoApproaches)
 
-${styleDesc}
+  const prompt = `Create a creative blog logo SVG: width="400" height="400" viewBox="0 0 400 400".
 
-Design a LOGO MARK (icon-style logo), not just text. Ideas:
-1. An abstract geometric shape or symbol incorporating the letter "${firstChar}"
-2. Use primary color as the main color
-3. The shape should work at small sizes (32px) and large sizes
-4. Include the letter "${firstChar}" integrated into or on top of the geometric shape
-5. Use rounded corners (rx/ry) for a modern feel
-6. Background should be transparent (no background rect)
+Colors available: primary=${theme.primary}, bg=${theme.background}, surface=${theme.surface}, text=${theme.text}
+Blog: "${blogName}", key letter: "${firstChar}"
 
-Keep SVG simple and under 2000 characters. Output the <svg>...</svg> directly.`
+DESIGN CONCEPT: ${approach}
+
+Requirements:
+- This must be a UNIQUE, CREATIVE logo mark — NOT just a letter on a colored square
+- Use gradients (linearGradient/radialGradient) for richness
+- Combine 2-4 shapes to create an interesting composition
+- Use primary color and its lighter/darker variants (adjust opacity)
+- Transparent background (no full-size background rect)
+- The letter "${firstChar}" should be integrated creatively — part of the design, not just placed on top
+- Add subtle design details: a small accent shape, a decorative line, overlapping elements with opacity
+
+Keep under 3000 characters. Output <svg>...</svg> directly.`
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -126,26 +145,36 @@ export async function generateFaviconSVG(
   style?: string,
 ): Promise<string> {
   const firstChar = blogName.charAt(0).toUpperCase()
-  const styleDesc = style
-    ? `Design style: ${style}.`
-    : `Design a clean, bold favicon.`
 
-  const prompt = `Create a favicon SVG: width="64" height="64" viewBox="0 0 64 64".
+  const faviconApproaches = [
+    `A circle with a gradient from primary to a lighter shade, white bold "${firstChar}"`,
+    `A rounded square with a diagonal split — two shades of primary, "${firstChar}" in white`,
+    `A hexagon shape filled with primary color, "${firstChar}" in white with a subtle shadow`,
+    `A circle with a wedge cut out (pac-man style), "${firstChar}" placed creatively`,
+    `Two overlapping rounded shapes creating depth, "${firstChar}" in the foreground`,
+    `A diamond rotated 45° with primary gradient, bold white "${firstChar}"`,
+    `A rounded square with a small accent circle in the corner, "${firstChar}" centered`,
+    `A circle with concentric ring accents and "${firstChar}" in the center`,
+  ]
 
-Colors: primary=${theme.primary}, bg=${theme.background}
+  const approach = style || pickRandom(faviconApproaches)
+
+  const prompt = `Create a distinctive favicon SVG: width="64" height="64" viewBox="0 0 64 64".
+
+Colors: primary=${theme.primary}, secondary=${theme.background}
 Letter: "${firstChar}"
 
-${styleDesc}
+DESIGN: ${approach}
 
-Design rules:
-1. Simple shape that works at 16x16 to 64x64 pixels
-2. Use primary color as background or main element
-3. White or light letter "${firstChar}" prominently displayed, 32-40px size
-4. Rounded square (rx="12") or circle as the base shape
-5. Maximum 3 elements total — keep extremely simple
-6. Must be clearly readable at tiny sizes
+Requirements:
+- Must look good at 16px-64px sizes
+- Use a gradient (not flat color) for the background shape
+- The letter "${firstChar}" should be white (#ffffff), bold, 28-36px font-size
+- Add ONE small accent detail (a tiny circle, a line, a notch) to make it unique
+- Maximum 5 SVG elements
+- Make it visually distinctive, not a plain square with a letter
 
-Keep SVG under 500 characters. Output the <svg>...</svg> directly.`
+Keep under 1000 characters. Output <svg>...</svg> directly.`
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {

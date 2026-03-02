@@ -79,6 +79,88 @@ Keep SVG simple and under 3000 characters. Output the <svg>...</svg> directly.`
   return generateFallbackCoverSVG(theme, title)
 }
 
+export async function generateLogoSVG(
+  theme: { primary: string; background: string; surface: string; text: string },
+  blogName: string,
+  style?: string,
+): Promise<string> {
+  const firstChar = blogName.charAt(0).toUpperCase()
+  const styleDesc = style
+    ? `Design style: ${style}.`
+    : `Design a modern, memorable logo mark.`
+
+  const prompt = `Create a blog logo SVG: width="400" height="400" viewBox="0 0 400 400".
+
+Colors: primary=${theme.primary}, bg=${theme.background}, surface=${theme.surface}, text=${theme.text}
+Blog name: "${blogName}" (first letter: "${firstChar}")
+
+${styleDesc}
+
+Design a LOGO MARK (icon-style logo), not just text. Ideas:
+1. An abstract geometric shape or symbol incorporating the letter "${firstChar}"
+2. Use primary color as the main color
+3. The shape should work at small sizes (32px) and large sizes
+4. Include the letter "${firstChar}" integrated into or on top of the geometric shape
+5. Use rounded corners (rx/ry) for a modern feel
+6. Background should be transparent (no background rect)
+
+Keep SVG simple and under 2000 characters. Output the <svg>...</svg> directly.`
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const raw = await callClaude(SVG_SYSTEM_PROMPT, prompt, 4096, 'claude-haiku-4-5-20251001')
+      return extractSVG(raw)
+    } catch (e) {
+      console.warn(`Logo SVG attempt ${attempt + 1} failed:`, e instanceof Error ? e.message : e)
+      if (attempt === 2) {
+        return generateFallbackLogoSVG(theme, firstChar)
+      }
+    }
+  }
+  return generateFallbackLogoSVG(theme, firstChar)
+}
+
+export async function generateFaviconSVG(
+  theme: { primary: string; background: string },
+  blogName: string,
+  style?: string,
+): Promise<string> {
+  const firstChar = blogName.charAt(0).toUpperCase()
+  const styleDesc = style
+    ? `Design style: ${style}.`
+    : `Design a clean, bold favicon.`
+
+  const prompt = `Create a favicon SVG: width="64" height="64" viewBox="0 0 64 64".
+
+Colors: primary=${theme.primary}, bg=${theme.background}
+Letter: "${firstChar}"
+
+${styleDesc}
+
+Design rules:
+1. Simple shape that works at 16x16 to 64x64 pixels
+2. Use primary color as background or main element
+3. White or light letter "${firstChar}" prominently displayed, 32-40px size
+4. Rounded square (rx="12") or circle as the base shape
+5. Maximum 3 elements total — keep extremely simple
+6. Must be clearly readable at tiny sizes
+
+Keep SVG under 500 characters. Output the <svg>...</svg> directly.`
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const raw = await callClaude(SVG_SYSTEM_PROMPT, prompt, 2048, 'claude-haiku-4-5-20251001')
+      return extractSVG(raw)
+    } catch (e) {
+      console.warn(`Favicon SVG attempt ${attempt + 1} failed:`, e instanceof Error ? e.message : e)
+      if (attempt === 2) {
+        return generateFallbackFaviconSVG(theme.primary, firstChar)
+      }
+    }
+  }
+  return generateFallbackFaviconSVG(theme.primary, firstChar)
+}
+
 function extractSVG(raw: string): string {
   if (!raw || raw.trim().length === 0) {
     throw new Error('Empty response from Claude')
@@ -131,6 +213,25 @@ function generateFallbackHeaderSVG(
   <circle cx="600" cy="350" r="150" fill="${theme.primary}" opacity="0.05"/>
   <rect x="350" y="165" width="500" height="70" rx="12" fill="${theme.surface}" opacity="0.7"/>
   <text x="600" y="210" text-anchor="middle" font-family="sans-serif" font-size="42" font-weight="700" fill="${theme.text}">${safeName}</text>
+</svg>`
+}
+
+function generateFallbackLogoSVG(
+  theme: { primary: string; background: string; surface: string; text: string },
+  firstChar: string,
+): string {
+  const safeChar = escapeXml(firstChar)
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <rect x="40" y="40" width="320" height="320" rx="64" fill="${theme.primary}"/>
+  <text x="200" y="248" text-anchor="middle" font-family="sans-serif" font-size="200" font-weight="700" fill="#ffffff">${safeChar}</text>
+</svg>`
+}
+
+function generateFallbackFaviconSVG(primary: string, firstChar: string): string {
+  const safeChar = escapeXml(firstChar)
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="${primary}"/>
+  <text x="32" y="44" text-anchor="middle" font-family="sans-serif" font-size="36" font-weight="700" fill="#ffffff">${safeChar}</text>
 </svg>`
 }
 

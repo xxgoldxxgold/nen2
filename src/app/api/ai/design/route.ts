@@ -182,6 +182,11 @@ components: heading_style:"simple", article_card:"minimal"
 - 「画像を生成」「アート風」「抽象的な画像」→ generate_header_image（SVG生成）
 - 曖昧な場合（「ハワイにして」等、具体的な場所・自然の景色）→ header_photo_query を優先
 
+## ロゴ・ファビコン生成
+ユーザーが「ロゴを作って」「ロゴを生成して」等と言った場合、\`"generate_logo": true\` を返す。
+ユーザーが「ファビコンを作って」「ファビコンを生成して」等と言った場合、\`"generate_favicon": true\` を返す。
+スタイル指定がある場合は \`"logo_style": "english description"\` や \`"favicon_style": "english description"\` も返す。
+
 ## OG画像テンプレート
 ユーザーが「OG画像を変えて」「SNSの画像を変えて」「シェア画像」等と言った場合、settingsのimages.og_templateを変更。
 選択肢: standard, bold, split, gradient, minimal, photo_overlay
@@ -222,6 +227,10 @@ components: heading_style:"simple", article_card:"minimal"
   "generate_header_image": true/false,
   "header_image_style": "画像スタイルの英語説明（generate_header_imageがtrueの場合のみ）",
   "header_photo_query": "english keywords（実写写真の場合のみ）",
+  "generate_logo": true/false,
+  "logo_style": "english style description（generate_logoがtrueの場合のみ）",
+  "generate_favicon": true/false,
+  "favicon_style": "english style description（generate_faviconがtrueの場合のみ）",
   "message": "ユーザーへの説明（日本語）"
 }
 

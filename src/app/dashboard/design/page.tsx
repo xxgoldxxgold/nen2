@@ -67,6 +67,8 @@ export default function DesignPage() {
   const [faviconUrl, setFaviconUrl] = useState('')
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [uploadingFavicon, setUploadingFavicon] = useState(false)
+  const [generatingLogo, setGeneratingLogo] = useState(false)
+  const [generatingFavicon, setGeneratingFavicon] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
   const faviconInputRef = useRef<HTMLInputElement>(null)
 
@@ -273,6 +275,23 @@ export default function DesignPage() {
     setUploadingLogo(false)
   }
 
+  const handleGenerateLogo = async () => {
+    setGeneratingLogo(true)
+    try {
+      const res = await fetch('/api/ai/generate-logo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blogName: displayName ? `${displayName}のブログ` : 'My Blog' }),
+      })
+      const data = await res.json()
+      if (res.ok && data.imageUrl) {
+        setLogoUrl(data.imageUrl)
+        setSettings(prev => ({ ...prev, images: { ...prev.images, logo_url: data.imageUrl } }))
+      }
+    } catch { /* ignore */ }
+    setGeneratingLogo(false)
+  }
+
   const handleDeleteLogo = () => {
     setLogoUrl('')
     setSettings(prev => ({ ...prev, images: { ...prev.images, logo_url: undefined } }))
@@ -291,6 +310,23 @@ export default function DesignPage() {
       }
     } catch { /* ignore */ }
     setUploadingFavicon(false)
+  }
+
+  const handleGenerateFavicon = async () => {
+    setGeneratingFavicon(true)
+    try {
+      const res = await fetch('/api/ai/generate-favicon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blogName: displayName ? `${displayName}のブログ` : 'My Blog' }),
+      })
+      const data = await res.json()
+      if (res.ok && data.imageUrl) {
+        setFaviconUrl(data.imageUrl)
+        setSettings(prev => ({ ...prev, images: { ...prev.images, favicon_url: data.imageUrl } }))
+      }
+    } catch { /* ignore */ }
+    setGeneratingFavicon(false)
   }
 
   const handleDeleteFavicon = () => {
@@ -428,6 +464,13 @@ export default function DesignPage() {
       } else if (data.generate_header_image) {
         const newColors = (data.settings as BlogTheme)?.colors || settings.colors
         handleGenerateHeaderImage({ style: data.header_image_style, colors: newColors })
+      }
+      // Auto-trigger logo/favicon generation
+      if (data.generate_logo) {
+        handleGenerateLogo()
+      }
+      if (data.generate_favicon) {
+        handleGenerateFavicon()
       }
     } catch {
       setChatMessages(prev => [...prev, {
@@ -656,11 +699,17 @@ export default function DesignPage() {
               )}
               <input ref={logoInputRef} type="file" accept="image/png,image/webp,image/svg+xml" className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadLogo(f); e.target.value = '' }} />
-              <button onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo}
-                className="flex items-center gap-1 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300">
-                <Upload className="h-3 w-3" /> {uploadingLogo ? 'アップロード中...' : 'アップロード'}
-              </button>
-              <p className="mt-1 text-xs text-gray-400">SVG / PNG / WebP, 2MB以下</p>
+              <div className="flex gap-2">
+                <button onClick={handleGenerateLogo} disabled={generatingLogo || uploadingLogo}
+                  className="flex items-center gap-1 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 dark:bg-purple-900/30 dark:text-purple-400">
+                  <Sparkles className="h-3 w-3" /> {generatingLogo ? 'AI生成中...' : 'AIで生成'}
+                </button>
+                <button onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo || generatingLogo}
+                  className="flex items-center gap-1 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300">
+                  <Upload className="h-3 w-3" /> {uploadingLogo ? 'アップロード中...' : 'アップロード'}
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-gray-400">AIが自動生成、またはSVG/PNG/WebP（2MB以下）をアップロード</p>
             </div>
 
             {/* Favicon */}
@@ -681,9 +730,13 @@ export default function DesignPage() {
               <div className="flex gap-2">
                 <input ref={faviconInputRef} type="file" accept="image/png,image/svg+xml,image/x-icon" className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadFavicon(f); e.target.value = '' }} />
-                <button onClick={() => faviconInputRef.current?.click()} disabled={uploadingFavicon}
+                <button onClick={handleGenerateFavicon} disabled={generatingFavicon || uploadingFavicon}
+                  className="flex items-center gap-1 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 dark:bg-purple-900/30 dark:text-purple-400">
+                  <Sparkles className="h-3 w-3" /> {generatingFavicon ? 'AI生成中...' : 'AIで生成'}
+                </button>
+                <button onClick={() => faviconInputRef.current?.click()} disabled={uploadingFavicon || generatingFavicon}
                   className="flex items-center gap-1 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300">
-                  <Upload className="h-3 w-3" /> {uploadingFavicon ? 'アップロード中...' : 'カスタム画像に変更'}
+                  <Upload className="h-3 w-3" /> {uploadingFavicon ? 'アップロード中...' : 'カスタム画像'}
                 </button>
                 {faviconUrl && (
                   <button onClick={handleDeleteFavicon}

@@ -547,14 +547,6 @@ export default function DesignPage() {
               </div>
             )}
             <div className="flex gap-2">
-              <button
-                onClick={() => handleGenerateHeaderImage()}
-                disabled={generatingHeader}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-50 px-3 py-2.5 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 dark:bg-purple-900/20 dark:text-purple-400"
-              >
-                <Sparkles className={`h-4 w-4 ${generatingHeader ? 'animate-spin' : ''}`} />
-                {generatingHeader ? '処理中...' : 'AI生成'}
-              </button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -575,7 +567,7 @@ export default function DesignPage() {
                 写真アップロード
               </button>
             </div>
-            <p className="mt-2 text-xs text-gray-400">AI生成（抽象アート）またはチャットで「〇〇の写真にして」で実写写真を設定。手動アップロードも可能（5MB以下）</p>
+            <p className="mt-2 text-xs text-gray-400">チャットで「〇〇の写真にして」で実写写真を設定。手動アップロードも可能（5MB以下）</p>
           </div>
         </div>
 

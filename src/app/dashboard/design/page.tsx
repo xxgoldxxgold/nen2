@@ -579,7 +579,7 @@ export default function DesignPage() {
               <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
                 <Sparkles className="h-5 w-5 text-purple-600" /> AIデザイン
               </h2>
-              <p className="text-xs text-gray-500">「かわいいピンク系」「和風で落ち着いた雰囲気」など</p>
+              <p className="text-xs text-gray-500">「かわいいピンク系」「和風で落ち着いた雰囲気」など。ヘッダー写真は「海の写真にして」「桜のヘッダーにして」で設定</p>
             </div>
             <div className="h-48 space-y-3 overflow-y-auto px-4 py-4">
               {chatMessages.length === 0 && (

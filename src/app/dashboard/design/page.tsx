@@ -293,8 +293,13 @@ export default function DesignPage() {
         setSettings(prev => ({ ...prev, images: { ...prev.images, logo_url: data.imageUrl } }))
         setShowLogoPrompt(false)
         setLogoPrompt('')
+      } else {
+        setChatMessages(prev => [...prev, { role: 'ai', content: `ロゴ生成エラー: ${data.error || 'Unknown error'}` }])
       }
-    } catch { /* ignore */ }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setChatMessages(prev => [...prev, { role: 'ai', content: `ロゴ生成エラー: ${msg}` }])
+    }
     setGeneratingLogo(false)
   }
 
@@ -332,8 +337,13 @@ export default function DesignPage() {
         setSettings(prev => ({ ...prev, images: { ...prev.images, favicon_url: data.imageUrl } }))
         setShowFaviconPrompt(false)
         setFaviconPrompt('')
+      } else {
+        setChatMessages(prev => [...prev, { role: 'ai', content: `ファビコン生成エラー: ${data.error || 'Unknown error'}` }])
       }
-    } catch { /* ignore */ }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setChatMessages(prev => [...prev, { role: 'ai', content: `ファビコン生成エラー: ${msg}` }])
+    }
     setGeneratingFavicon(false)
   }
 

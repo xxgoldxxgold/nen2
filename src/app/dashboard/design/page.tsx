@@ -280,12 +280,14 @@ export default function DesignPage() {
   }
 
   const handleGenerateLogo = async (style?: string) => {
+    const styleValue = style || logoPrompt || undefined
     setGeneratingLogo(true)
+    setChatMessages(prev => [...prev, { role: 'ai', content: `ロゴを生成中...（${styleValue || 'デフォルト'}）` }])
     try {
       const res = await fetch('/api/ai/generate-logo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blogName: displayName ? `${displayName}のブログ` : 'My Blog', style: style || logoPrompt || undefined }),
+        body: JSON.stringify({ blogName: displayName ? `${displayName}のブログ` : 'My Blog', style: styleValue }),
       })
       const data = await res.json()
       if (res.ok && data.imageUrl) {
@@ -293,8 +295,9 @@ export default function DesignPage() {
         setSettings(prev => ({ ...prev, images: { ...prev.images, logo_url: data.imageUrl } }))
         setShowLogoPrompt(false)
         setLogoPrompt('')
+        setChatMessages(prev => [...prev, { role: 'ai', content: 'ロゴを生成しました！' }])
       } else {
-        setChatMessages(prev => [...prev, { role: 'ai', content: `ロゴ生成エラー: ${data.error || 'Unknown error'}` }])
+        setChatMessages(prev => [...prev, { role: 'ai', content: `ロゴ生成エラー: ${data.error || `HTTP ${res.status}`}` }])
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -324,12 +327,14 @@ export default function DesignPage() {
   }
 
   const handleGenerateFavicon = async (style?: string) => {
+    const styleValue = style || faviconPrompt || undefined
     setGeneratingFavicon(true)
+    setChatMessages(prev => [...prev, { role: 'ai', content: `ファビコンを生成中...（${styleValue || 'デフォルト'}）` }])
     try {
       const res = await fetch('/api/ai/generate-favicon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blogName: displayName ? `${displayName}のブログ` : 'My Blog', style: style || faviconPrompt || undefined }),
+        body: JSON.stringify({ blogName: displayName ? `${displayName}のブログ` : 'My Blog', style: styleValue }),
       })
       const data = await res.json()
       if (res.ok && data.imageUrl) {
@@ -337,8 +342,9 @@ export default function DesignPage() {
         setSettings(prev => ({ ...prev, images: { ...prev.images, favicon_url: data.imageUrl } }))
         setShowFaviconPrompt(false)
         setFaviconPrompt('')
+        setChatMessages(prev => [...prev, { role: 'ai', content: 'ファビコンを生成しました！' }])
       } else {
-        setChatMessages(prev => [...prev, { role: 'ai', content: `ファビコン生成エラー: ${data.error || 'Unknown error'}` }])
+        setChatMessages(prev => [...prev, { role: 'ai', content: `ファビコン生成エラー: ${data.error || `HTTP ${res.status}`}` }])
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)

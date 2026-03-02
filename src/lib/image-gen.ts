@@ -92,42 +92,42 @@ export async function generateLogoSVG(
 ): Promise<string> {
   const firstChar = blogName.charAt(0).toUpperCase()
 
-  const logoApproaches = [
-    `A shield or badge shape with the letter "${firstChar}" cut out as negative space`,
-    `Overlapping circles forming a Venn-diagram pattern with "${firstChar}" at the intersection`,
-    `A hexagon with a gradient fill and "${firstChar}" in bold white`,
-    `A speech bubble or book shape with "${firstChar}" integrated`,
-    `Two or three layered shapes (circle behind a rounded square) creating depth, with "${firstChar}" on top`,
-    `A diamond/rhombus rotated 45° with "${firstChar}" centered inside`,
-    `An abstract pen nib or quill shape incorporating "${firstChar}"`,
-    `A circle with a creative cutout/notch that suggests the letter "${firstChar}"`,
-    `Stacked horizontal bars forming an abstract "${firstChar}" shape`,
-    `A leaf or organic shape with "${firstChar}" embedded in it`,
+  const defaultApproaches = [
+    'shield badge with negative space letter',
+    'overlapping circles, venn-diagram style',
+    'hexagon with gradient',
+    'book or speech bubble shape',
+    'layered shapes with depth (circle behind rounded square)',
+    'diamond rotated 45 degrees',
+    'abstract pen nib / quill',
+    'circle with creative cutout',
+    'leaf or organic shape',
   ]
 
-  const approach = style || pickRandom(logoApproaches)
+  const userStyle = style
+    ? `ユーザーの要望（最優先で従うこと）: 「${style}」\nこの要望を忠実にSVGデザインに反映してください。ユーザーが具体的なモチーフ（猫、星、花など）を指定した場合、そのモチーフをSVGのpath要素で描いてください。`
+    : `Design approach: ${pickRandom(defaultApproaches)}`
 
-  const prompt = `Create a creative blog logo SVG: width="400" height="400" viewBox="0 0 400 400".
+  const prompt = `ブログ「${blogName}」のロゴをSVGで作成してください。
+SVG仕様: width="400" height="400" viewBox="0 0 400 400"
 
-Colors available: primary=${theme.primary}, bg=${theme.background}, surface=${theme.surface}, text=${theme.text}
-Blog: "${blogName}", key letter: "${firstChar}"
+${userStyle}
 
-DESIGN CONCEPT: ${approach}
+使用カラー: primary=${theme.primary}, bg=${theme.background}, surface=${theme.surface}
+ブログ名の頭文字: "${firstChar}"
 
-Requirements:
-- This must be a UNIQUE, CREATIVE logo mark — NOT just a letter on a colored square
-- Use gradients (linearGradient/radialGradient) for richness
-- Combine 2-4 shapes to create an interesting composition
-- Use primary color and its lighter/darker variants (adjust opacity)
-- Transparent background (no full-size background rect)
-- The letter "${firstChar}" should be integrated creatively — part of the design, not just placed on top
-- Add subtle design details: a small accent shape, a decorative line, overlapping elements with opacity
+技術要件:
+- グラデーション（linearGradient/radialGradient）を使ってリッチに
+- 2〜6個のshapeを組み合わせた構成
+- 背景は透明（全面を覆うrectは不要）
+- 頭文字"${firstChar}"をデザインに組み込む（ただしユーザーがモチーフを指定した場合はモチーフ優先）
+- 3000文字以内
 
-Keep under 3000 characters. Output <svg>...</svg> directly.`
+<svg>...</svg>のみを出力。説明不要。`
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const raw = await callClaude(SVG_SYSTEM_PROMPT, prompt, 4096, 'claude-haiku-4-5-20251001')
+      const raw = await callClaude(SVG_SYSTEM_PROMPT, prompt, 4096, 'claude-sonnet-4-6')
       return extractSVG(raw)
     } catch (e) {
       console.warn(`Logo SVG attempt ${attempt + 1} failed:`, e instanceof Error ? e.message : e)
@@ -146,39 +146,39 @@ export async function generateFaviconSVG(
 ): Promise<string> {
   const firstChar = blogName.charAt(0).toUpperCase()
 
-  const faviconApproaches = [
-    `A circle with a gradient from primary to a lighter shade, white bold "${firstChar}"`,
-    `A rounded square with a diagonal split — two shades of primary, "${firstChar}" in white`,
-    `A hexagon shape filled with primary color, "${firstChar}" in white with a subtle shadow`,
-    `A circle with a wedge cut out (pac-man style), "${firstChar}" placed creatively`,
-    `Two overlapping rounded shapes creating depth, "${firstChar}" in the foreground`,
-    `A diamond rotated 45° with primary gradient, bold white "${firstChar}"`,
-    `A rounded square with a small accent circle in the corner, "${firstChar}" centered`,
-    `A circle with concentric ring accents and "${firstChar}" in the center`,
+  const defaultApproaches = [
+    'circle with gradient, white letter',
+    'rounded square with diagonal split',
+    'hexagon shape',
+    'overlapping shapes with depth',
+    'diamond rotated 45 degrees',
+    'circle with concentric ring accents',
   ]
 
-  const approach = style || pickRandom(faviconApproaches)
+  const userStyle = style
+    ? `ユーザーの要望（最優先で従うこと）: 「${style}」\nこの要望を忠実にファビコンデザインに反映してください。具体的なモチーフ（猫、星、花など）が指定された場合、そのモチーフをpath要素でシンプルに描いてください。`
+    : `Design approach: ${pickRandom(defaultApproaches)}`
 
-  const prompt = `Create a distinctive favicon SVG: width="64" height="64" viewBox="0 0 64 64".
+  const prompt = `ブログ「${blogName}」のファビコンをSVGで作成してください。
+SVG仕様: width="64" height="64" viewBox="0 0 64 64"
 
-Colors: primary=${theme.primary}, secondary=${theme.background}
-Letter: "${firstChar}"
+${userStyle}
 
-DESIGN: ${approach}
+使用カラー: primary=${theme.primary}, bg=${theme.background}
+頭文字: "${firstChar}"
 
-Requirements:
-- Must look good at 16px-64px sizes
-- Use a gradient (not flat color) for the background shape
-- The letter "${firstChar}" should be white (#ffffff), bold, 28-36px font-size
-- Add ONE small accent detail (a tiny circle, a line, a notch) to make it unique
-- Maximum 5 SVG elements
-- Make it visually distinctive, not a plain square with a letter
+技術要件:
+- 16px〜64pxで視認性が良いデザイン
+- グラデーションを使う（フラットカラーNG）
+- ユーザーがモチーフを指定していない場合のみ、白い"${firstChar}"を表示
+- 最大6要素
+- 1500文字以内
 
-Keep under 1000 characters. Output <svg>...</svg> directly.`
+<svg>...</svg>のみを出力。説明不要。`
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const raw = await callClaude(SVG_SYSTEM_PROMPT, prompt, 2048, 'claude-haiku-4-5-20251001')
+      const raw = await callClaude(SVG_SYSTEM_PROMPT, prompt, 2048, 'claude-sonnet-4-6')
       return extractSVG(raw)
     } catch (e) {
       console.warn(`Favicon SVG attempt ${attempt + 1} failed:`, e instanceof Error ? e.message : e)

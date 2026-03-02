@@ -182,6 +182,21 @@ components: heading_style:"simple", article_card:"minimal"
 - 「画像を生成」「アート風」「抽象的な画像」→ generate_header_image（SVG生成）
 - 曖昧な場合（「ハワイにして」等、具体的な場所・自然の景色）→ header_photo_query を優先
 
+## OG画像テンプレート
+ユーザーが「OG画像を変えて」「SNSの画像を変えて」「シェア画像」等と言った場合、settingsのimages.og_templateを変更。
+選択肢: standard, bold, split, gradient, minimal, photo_overlay
+
+マッピング例:
+- 「インパクトあるOG」「目立つOG」→ bold
+- 「シンプルなOG」→ minimal
+- 「おしゃれなOG」「きれいなOG」→ gradient
+- 「写真を使ったOG」→ photo_overlay
+- 「2分割のOG」→ split
+- 「普通のOG」「標準に戻して」→ standard
+
+フルテーマ生成時にも、雰囲気に合ったog_templateを自動選択してください。
+例: ミニマル系テーマ → minimal, ポップ系 → bold, エレガント系 → gradient
+
 ## 応答ルール
 
 ユーザーの指示に応じて以下のモードで応答してください。

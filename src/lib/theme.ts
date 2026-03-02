@@ -57,6 +57,9 @@ export interface BlogTheme {
       photographer: string
       pexels_url: string
     }
+    logo_url?: string
+    favicon_url?: string
+    og_template?: 'standard' | 'bold' | 'split' | 'gradient' | 'minimal' | 'photo_overlay'
   }
   css: {
     inline: string
@@ -115,6 +118,7 @@ export const DEFAULT_THEME: BlogTheme = {
       style: 'minimal',
     },
   },
+  images: { og_template: 'standard' },
   css: { inline: '' },
   font_preload: [],
 }

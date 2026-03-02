@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { createDataClient } from '@/lib/supabase/data-client'
-import { Send, Palette, Type, Layout, Sparkles, Eye, ImageIcon, Upload } from 'lucide-react'
+import { Send, Palette, Type, Layout, Sparkles, Eye, ImageIcon, Upload, Globe, Star, Trash2 } from 'lucide-react'
 import type { BlogTheme } from '@/lib/theme'
 import { DEFAULT_THEME, generateInlineCSS, migrateOldSettings } from '@/lib/theme'
 
@@ -39,6 +39,15 @@ const fontOptions = [
   { value: "'Merriweather', serif", label: 'Merriweather' },
 ]
 
+const ogTemplates = [
+  { id: 'standard', name: 'スタンダード', desc: 'アクセントライン付き' },
+  { id: 'bold', name: 'ボールド', desc: 'primary色背景・白文字' },
+  { id: 'split', name: 'スプリット', desc: '左右2分割' },
+  { id: 'gradient', name: 'グラデーション', desc: 'primary→surfaceグラデ' },
+  { id: 'minimal', name: 'ミニマル', desc: 'テキストのみ' },
+  { id: 'photo_overlay', name: 'フォト', desc: '写真+カラーオーバーレイ' },
+]
+
 export default function DesignPage() {
   const [settings, setSettings] = useState<BlogTheme>(DEFAULT_THEME)
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'ai'; content: string }>>([])
@@ -54,6 +63,12 @@ export default function DesignPage() {
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const previewContainerRef = useRef<HTMLDivElement>(null)
   const [previewScale, setPreviewScale] = useState(0.6)
+  const [logoUrl, setLogoUrl] = useState('')
+  const [faviconUrl, setFaviconUrl] = useState('')
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [uploadingFavicon, setUploadingFavicon] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+  const faviconInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -74,6 +89,12 @@ export default function DesignPage() {
           setSettings(migrated)
           if (migrated.images?.header_image_url) {
             setHeaderImageUrl(migrated.images.header_image_url)
+          }
+          if (migrated.images?.logo_url) {
+            setLogoUrl(migrated.images.logo_url)
+          }
+          if (migrated.images?.favicon_url) {
+            setFaviconUrl(migrated.images.favicon_url)
           }
         }
       }
@@ -235,6 +256,46 @@ export default function DesignPage() {
       setChatMessages(prev => [...prev, { role: 'ai', content: `画像生成エラー: ${msg}` }])
     }
     setGeneratingHeader(false)
+  }
+
+  const handleUploadLogo = async (file: File) => {
+    setUploadingLogo(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/upload-logo', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (res.ok && data.imageUrl) {
+        setLogoUrl(data.imageUrl)
+        setSettings(prev => ({ ...prev, images: { ...prev.images, logo_url: data.imageUrl } }))
+      }
+    } catch { /* ignore */ }
+    setUploadingLogo(false)
+  }
+
+  const handleDeleteLogo = () => {
+    setLogoUrl('')
+    setSettings(prev => ({ ...prev, images: { ...prev.images, logo_url: undefined } }))
+  }
+
+  const handleUploadFavicon = async (file: File) => {
+    setUploadingFavicon(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/upload-favicon', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (res.ok && data.imageUrl) {
+        setFaviconUrl(data.imageUrl)
+        setSettings(prev => ({ ...prev, images: { ...prev.images, favicon_url: data.imageUrl } }))
+      }
+    } catch { /* ignore */ }
+    setUploadingFavicon(false)
+  }
+
+  const handleDeleteFavicon = () => {
+    setFaviconUrl('')
+    setSettings(prev => ({ ...prev, images: { ...prev.images, favicon_url: undefined } }))
   }
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -568,6 +629,105 @@ export default function DesignPage() {
               </button>
             </div>
             <p className="mt-2 text-xs text-gray-400">チャットで「〇〇の写真にして」で実写写真を設定。手動アップロードも可能（5MB以下）</p>
+          </div>
+
+          {/* Logo & Favicon */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+              <Star className="h-5 w-5" /> ロゴ・ファビコン
+            </h2>
+
+            {/* Logo */}
+            <div className="mb-5">
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">ロゴ画像</label>
+              {logoUrl ? (
+                <div className="mb-2 flex items-center gap-3">
+                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                    <img src={logoUrl} alt="ロゴ" className="max-h-full max-w-full object-contain" />
+                  </div>
+                  <button onClick={handleDeleteLogo} className="flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400">
+                    <Trash2 className="h-3 w-3" /> 削除
+                  </button>
+                </div>
+              ) : (
+                <div className="mb-2 flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 text-xs text-gray-400 dark:border-gray-600">
+                  未設定
+                </div>
+              )}
+              <input ref={logoInputRef} type="file" accept="image/png,image/webp,image/svg+xml" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadLogo(f); e.target.value = '' }} />
+              <button onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo}
+                className="flex items-center gap-1 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300">
+                <Upload className="h-3 w-3" /> {uploadingLogo ? 'アップロード中...' : 'アップロード'}
+              </button>
+              <p className="mt-1 text-xs text-gray-400">SVG / PNG / WebP, 2MB以下</p>
+            </div>
+
+            {/* Favicon */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">ファビコン</label>
+              <div className="mb-2 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700" style={{ background: faviconUrl ? 'transparent' : settings.colors.primary }}>
+                  {faviconUrl ? (
+                    <img src={faviconUrl} alt="ファビコン" className="max-h-full max-w-full object-contain" />
+                  ) : (
+                    <span style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>
+                      {(displayName || 'B').charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-gray-500">{faviconUrl ? 'カスタム画像' : '自動生成（頭文字 + primary色）'}</span>
+              </div>
+              <div className="flex gap-2">
+                <input ref={faviconInputRef} type="file" accept="image/png,image/svg+xml,image/x-icon" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadFavicon(f); e.target.value = '' }} />
+                <button onClick={() => faviconInputRef.current?.click()} disabled={uploadingFavicon}
+                  className="flex items-center gap-1 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300">
+                  <Upload className="h-3 w-3" /> {uploadingFavicon ? 'アップロード中...' : 'カスタム画像に変更'}
+                </button>
+                {faviconUrl && (
+                  <button onClick={handleDeleteFavicon}
+                    className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400">
+                    自動生成に戻す
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* OG Image Template */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+              <Globe className="h-5 w-5" /> OG画像テンプレート
+            </h2>
+            <p className="mb-3 text-xs text-gray-500">SNSでシェアされた時に表示される画像のデザイン</p>
+            <div className="grid grid-cols-3 gap-2">
+              {ogTemplates.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => updateSettings('images.og_template', t.id)}
+                  className={`rounded-lg border p-2 text-left transition-colors ${
+                    (settings.images?.og_template || 'standard') === t.id
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                      : 'border-gray-200 hover:border-gray-300 dark:border-gray-700'
+                  }`}
+                >
+                  <div className={`text-xs font-medium ${(settings.images?.og_template || 'standard') === t.id ? 'text-blue-700 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>{t.name}</div>
+                  <div className="text-[10px] text-gray-400">{t.desc}</div>
+                </button>
+              ))}
+            </div>
+            {/* OG Preview */}
+            <div className="mt-4">
+              <label className="mb-1 block text-xs font-medium text-gray-500">プレビュー</label>
+              <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                <img
+                  src={`/api/og-preview?template=${settings.images?.og_template || 'standard'}&title=${encodeURIComponent('サンプル記事タイトル')}&blogName=${encodeURIComponent(displayName ? `${displayName}のブログ` : 'My Blog')}&primary=${encodeURIComponent(settings.colors.primary)}&background=${encodeURIComponent(settings.colors.background)}&surface=${encodeURIComponent(settings.colors.surface)}&text=${encodeURIComponent(settings.colors.text)}&textMuted=${encodeURIComponent(settings.colors.text_muted)}`}
+                  alt="OGプレビュー"
+                  className="w-full"
+                />
+              </div>
+            </div>
           </div>
         </div>
 

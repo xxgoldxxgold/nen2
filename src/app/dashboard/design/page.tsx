@@ -69,6 +69,10 @@ export default function DesignPage() {
   const [uploadingFavicon, setUploadingFavicon] = useState(false)
   const [generatingLogo, setGeneratingLogo] = useState(false)
   const [generatingFavicon, setGeneratingFavicon] = useState(false)
+  const [logoPrompt, setLogoPrompt] = useState('')
+  const [faviconPrompt, setFaviconPrompt] = useState('')
+  const [showLogoPrompt, setShowLogoPrompt] = useState(false)
+  const [showFaviconPrompt, setShowFaviconPrompt] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
   const faviconInputRef = useRef<HTMLInputElement>(null)
 
@@ -275,18 +279,20 @@ export default function DesignPage() {
     setUploadingLogo(false)
   }
 
-  const handleGenerateLogo = async () => {
+  const handleGenerateLogo = async (style?: string) => {
     setGeneratingLogo(true)
     try {
       const res = await fetch('/api/ai/generate-logo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blogName: displayName ? `${displayName}のブログ` : 'My Blog' }),
+        body: JSON.stringify({ blogName: displayName ? `${displayName}のブログ` : 'My Blog', style: style || logoPrompt || undefined }),
       })
       const data = await res.json()
       if (res.ok && data.imageUrl) {
         setLogoUrl(data.imageUrl)
         setSettings(prev => ({ ...prev, images: { ...prev.images, logo_url: data.imageUrl } }))
+        setShowLogoPrompt(false)
+        setLogoPrompt('')
       }
     } catch { /* ignore */ }
     setGeneratingLogo(false)
@@ -312,18 +318,20 @@ export default function DesignPage() {
     setUploadingFavicon(false)
   }
 
-  const handleGenerateFavicon = async () => {
+  const handleGenerateFavicon = async (style?: string) => {
     setGeneratingFavicon(true)
     try {
       const res = await fetch('/api/ai/generate-favicon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blogName: displayName ? `${displayName}のブログ` : 'My Blog' }),
+        body: JSON.stringify({ blogName: displayName ? `${displayName}のブログ` : 'My Blog', style: style || faviconPrompt || undefined }),
       })
       const data = await res.json()
       if (res.ok && data.imageUrl) {
         setFaviconUrl(data.imageUrl)
         setSettings(prev => ({ ...prev, images: { ...prev.images, favicon_url: data.imageUrl } }))
+        setShowFaviconPrompt(false)
+        setFaviconPrompt('')
       }
     } catch { /* ignore */ }
     setGeneratingFavicon(false)
@@ -700,16 +708,36 @@ export default function DesignPage() {
               <input ref={logoInputRef} type="file" accept="image/png,image/webp,image/svg+xml" className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadLogo(f); e.target.value = '' }} />
               <div className="flex gap-2">
-                <button onClick={handleGenerateLogo} disabled={generatingLogo || uploadingLogo}
+                <button onClick={() => setShowLogoPrompt(!showLogoPrompt)} disabled={generatingLogo}
                   className="flex items-center gap-1 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 dark:bg-purple-900/30 dark:text-purple-400">
-                  <Sparkles className="h-3 w-3" /> {generatingLogo ? 'AI生成中...' : 'AIで生成'}
+                  <Sparkles className="h-3 w-3" /> AIで生成
                 </button>
                 <button onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo || generatingLogo}
                   className="flex items-center gap-1 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300">
                   <Upload className="h-3 w-3" /> {uploadingLogo ? 'アップロード中...' : 'アップロード'}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-400">AIが自動生成、またはSVG/PNG/WebP（2MB以下）をアップロード</p>
+              {showLogoPrompt && (
+                <div className="mt-2 space-y-2 rounded-lg border border-purple-200 bg-purple-50/50 p-3 dark:border-purple-800 dark:bg-purple-900/20">
+                  <input
+                    type="text"
+                    value={logoPrompt}
+                    onChange={(e) => setLogoPrompt(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && logoPrompt.trim() && handleGenerateLogo()}
+                    placeholder="例: シンプルで丸い感じ、本のアイコン風..."
+                    className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={() => handleGenerateLogo()} disabled={generatingLogo || !logoPrompt.trim()}
+                      className="flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:opacity-50">
+                      <Sparkles className="h-3 w-3" /> {generatingLogo ? '生成中...' : '生成する'}
+                    </button>
+                    <button onClick={() => { setShowLogoPrompt(false); setLogoPrompt('') }}
+                      className="rounded-lg px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700">キャンセル</button>
+                  </div>
+                </div>
+              )}
+              <p className="mt-1 text-xs text-gray-400">SVG / PNG / WebP, 2MB以下</p>
             </div>
 
             {/* Favicon */}
@@ -730,9 +758,9 @@ export default function DesignPage() {
               <div className="flex gap-2">
                 <input ref={faviconInputRef} type="file" accept="image/png,image/svg+xml,image/x-icon" className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadFavicon(f); e.target.value = '' }} />
-                <button onClick={handleGenerateFavicon} disabled={generatingFavicon || uploadingFavicon}
+                <button onClick={() => setShowFaviconPrompt(!showFaviconPrompt)} disabled={generatingFavicon}
                   className="flex items-center gap-1 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 dark:bg-purple-900/30 dark:text-purple-400">
-                  <Sparkles className="h-3 w-3" /> {generatingFavicon ? 'AI生成中...' : 'AIで生成'}
+                  <Sparkles className="h-3 w-3" /> AIで生成
                 </button>
                 <button onClick={() => faviconInputRef.current?.click()} disabled={uploadingFavicon || generatingFavicon}
                   className="flex items-center gap-1 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-300">
@@ -745,6 +773,26 @@ export default function DesignPage() {
                   </button>
                 )}
               </div>
+              {showFaviconPrompt && (
+                <div className="mt-2 space-y-2 rounded-lg border border-purple-200 bg-purple-50/50 p-3 dark:border-purple-800 dark:bg-purple-900/20">
+                  <input
+                    type="text"
+                    value={faviconPrompt}
+                    onChange={(e) => setFaviconPrompt(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && faviconPrompt.trim() && handleGenerateFavicon()}
+                    placeholder="例: 星マーク、ペンのアイコン、丸くてポップ..."
+                    className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={() => handleGenerateFavicon()} disabled={generatingFavicon || !faviconPrompt.trim()}
+                      className="flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:opacity-50">
+                      <Sparkles className="h-3 w-3" /> {generatingFavicon ? '生成中...' : '生成する'}
+                    </button>
+                    <button onClick={() => { setShowFaviconPrompt(false); setFaviconPrompt('') }}
+                      className="rounded-lg px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700">キャンセル</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

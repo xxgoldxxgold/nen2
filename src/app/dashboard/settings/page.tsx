@@ -191,17 +191,12 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-gray-900 dark:text-white">
-                現在のプラン: <span className="capitalize">{user.plan}</span>
+                無料プラン（全機能無制限）
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                AI残り回数: {user.ai_credits_remaining}回/月
+                AI機能を無制限にご利用いただけます
               </p>
             </div>
-            {user.plan === 'free' && (
-              <button className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white hover:from-blue-700 hover:to-purple-700">
-                Proにアップグレード
-              </button>
-            )}
           </div>
         </div>
 

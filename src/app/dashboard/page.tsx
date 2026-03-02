@@ -170,8 +170,8 @@ export default function DashboardPage() {
               <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">AI残り回数</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{profile?.ai_credits_remaining ?? 10}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">AI機能</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">無制限</p>
             </div>
           </div>
         </div>

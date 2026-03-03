@@ -134,6 +134,18 @@ export interface BlogSuggestion {
   post_title?: string
 }
 
+export interface UserFollow {
+  follower_id: string
+  user_id: string
+  created_at: string
+}
+
+export interface PostLike {
+  user_id: string
+  post_id: string
+  created_at: string
+}
+
 export interface AnalysisRun {
   id: string
   user_id: string

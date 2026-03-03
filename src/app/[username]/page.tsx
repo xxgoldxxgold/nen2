@@ -5,6 +5,7 @@ import Image from 'next/image'
 import type { Metadata } from 'next'
 import BlogThemeWrapper from '@/components/blog/BlogThemeWrapper'
 import Avatar from '@/components/blog/Avatar'
+import FollowButton from '@/components/social/FollowButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -126,6 +127,9 @@ export default async function UserBlogPage({ params }: Props) {
           <div>
             <div className="author-bio__name">{user.display_name}</div>
             {user.bio && <p className="author-bio__description">{user.bio}</p>}
+          </div>
+          <div style={{ marginLeft: 'auto' }}>
+            <FollowButton userId={user.id} />
           </div>
         </div>
         {articleList}

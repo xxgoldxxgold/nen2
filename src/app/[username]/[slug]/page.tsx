@@ -5,6 +5,8 @@ import Image from 'next/image'
 import type { Metadata } from 'next'
 import BlogThemeWrapper from '@/components/blog/BlogThemeWrapper'
 import Avatar from '@/components/blog/Avatar'
+import LikeButton from '@/components/social/LikeButton'
+import FollowButton from '@/components/social/FollowButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -166,11 +168,19 @@ export default async function PostPage({ params, searchParams }: Props) {
         )}
 
         {articleContent}
+
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '1.5em 0', borderTop: '1px solid var(--c-border, #eee)' }}>
+          <LikeButton postId={post.id} />
+        </div>
+
         <div className="author-bio">
           <Avatar src={user.avatar_url} name={user.display_name} size={48} className="author-bio__avatar" />
           <div>
             <div className="author-bio__name">{user.display_name}</div>
             {user.bio && <p className="author-bio__description">{user.bio}</p>}
+          </div>
+          <div style={{ marginLeft: 'auto' }}>
+            <FollowButton userId={user.id} />
           </div>
         </div>
       </div>

@@ -76,6 +76,30 @@ export async function getPublicPostTranslations(postId: string) {
   return data || []
 }
 
+export async function getFollowerCount(userId: string): Promise<number> {
+  const { count } = await supabasePublic
+    .from('user_follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+  return count || 0
+}
+
+export async function getFollowingCount(userId: string): Promise<number> {
+  const { count } = await supabasePublic
+    .from('user_follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('follower_id', userId)
+  return count || 0
+}
+
+export async function getPostLikeCount(postId: string): Promise<number> {
+  const { count } = await supabasePublic
+    .from('post_likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('post_id', postId)
+  return count || 0
+}
+
 export async function getPublicPostsByTag(tagId: string, userId: string) {
   const { data: postTags } = await supabasePublic
     .from('blog_post_tags')

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { createDataClient } from '@/lib/supabase/data-client'
 import Link from 'next/link'
-import { FileText, Eye, Sparkles, PenSquare, Globe, ExternalLink } from 'lucide-react'
+import { FileText, Eye, Sparkles, PenSquare, Globe, ExternalLink, Heart, Users } from 'lucide-react'
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton'
 import PostListClient from '@/components/dashboard/PostListClient'
 import type { Post } from '@/lib/types'
@@ -15,6 +15,8 @@ type DashboardData = {
   publishedCount: number
   draftCount: number
   posts: Post[]
+  followerCount: number
+  totalLikes: number
 }
 
 export default function DashboardPage() {
@@ -48,12 +50,32 @@ export default function DashboardPage() {
         .order('updated_at', { ascending: false })
 
       const allPosts = postData || []
+
+      // Fetch follower count
+      const { count: followerCount } = await db
+        .from('user_follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', uid)
+
+      // Fetch total likes across all posts
+      const publishedIds = allPosts.filter(p => p.status === 'published').map(p => p.id)
+      let totalLikes = 0
+      if (publishedIds.length > 0) {
+        const { count } = await db
+          .from('post_likes')
+          .select('*', { count: 'exact', head: true })
+          .in('post_id', publishedIds)
+        totalLikes = count || 0
+      }
+
       const result: DashboardData = {
         profile: profData,
         postCount: allPosts.length,
         publishedCount: allPosts.filter(p => p.status === 'published').length,
         draftCount: allPosts.filter(p => p.status === 'draft').length,
         posts: allPosts,
+        followerCount: followerCount || 0,
+        totalLikes,
       }
       setData(result)
     }
@@ -80,7 +102,7 @@ export default function DashboardPage() {
     )
   }
 
-  const { profile, postCount, publishedCount, draftCount, posts } = data
+  const { profile, postCount, publishedCount, draftCount, posts, followerCount, totalLikes } = data
 
   return (
     <div className="space-y-8">
@@ -130,7 +152,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
@@ -161,6 +183,28 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">下書き</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{draftCount}</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-pink-100 dark:bg-pink-900/30">
+              <Users className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">フォロワー</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{followerCount}</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
+              <Heart className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">総いいね数</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalLikes}</p>
             </div>
           </div>
         </div>

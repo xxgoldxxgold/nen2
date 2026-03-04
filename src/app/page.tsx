@@ -177,7 +177,7 @@ function FeatureCard({
         {icon}
       </div>
       <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
-      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{description}</p>
+      <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400">{description}</p>
     </div>
   )
 }

@@ -22,16 +22,19 @@ export default function DesignSpecAdminPage() {
   const [specs, setSpecs] = useState<Spec[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
-  const [isAdmin, setIsAdmin] = useState(true)
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
 
   useEffect(() => {
-    fetch('/api/d/specs?sort=votes')
-      .then(r => r.json())
-      .then(data => {
-        setSpecs(data.specs || [])
-        setLoading(false)
+    // 管理者チェック: ダミーPATCHで403なら非管理者
+    fetch('/api/d/specs/check-admin')
+      .then(r => {
+        if (r.status === 403 || r.status === 401) { setIsAdmin(false); setLoading(false); return }
+        setIsAdmin(true)
+        return fetch('/api/d/specs?sort=votes')
+          .then(r => r.json())
+          .then(data => { setSpecs(data.specs || []); setLoading(false) })
       })
-      .catch(() => setLoading(false))
+      .catch(() => { setIsAdmin(false); setLoading(false) })
   }, [])
 
   const changeStatus = async (specId: string, status: string) => {
@@ -59,6 +62,10 @@ export default function DesignSpecAdminPage() {
     a.download = `design_specs_${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  if (isAdmin === null) {
+    return <div style={{ textAlign: 'center', padding: '60px', color: '#999' }}>確認中...</div>
   }
 
   if (!isAdmin) {

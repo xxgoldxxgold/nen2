@@ -282,11 +282,56 @@ export function generateInlineCSS(theme: BlogTheme): string {
   css += `.footer a{color:var(--c-text-m)}.footer a:hover{color:var(--c-link-h)}`
   css += `.footer img{display:inline;vertical-align:middle}`
 
-  // 13. Responsive
-  css += `@media(max-width:768px){.container{padding:0 16px}.article__title{font-size:1.5em}.article__content h2{font-size:1.3em}.cover img{max-height:250px}`
+  // 13. Responsive — tablet
+  css += `@media(max-width:768px){`
+  css += `.container{padding:0 16px}`
+  css += `.article__title{font-size:1.5em}`
+  css += `.article__content h2{font-size:1.3em}`
+  css += `.cover img{max-height:250px}`
+  css += `.blog-header-image{max-height:280px}`
   if (comp.article_card.style === 'list') {
     css += `.article-card{flex-direction:column}.article-card__thumbnail{width:100%}`
   }
+  css += `}`
+
+  // 13b. Responsive — smartphone
+  css += `@media(max-width:480px){`
+  // Layout
+  css += `:root{--pad:14px;--fs-base:15px;--fs-h1:1.6rem;--fs-h2:1.25rem;--fs-h3:1.1rem}`
+  css += `.container{padding:0 14px}`
+  // Header
+  css += `.header-inner{padding:0.8em 14px}`
+  css += `.logo{font-size:1em}`
+  css += `.blog-header-image{max-height:200px}`
+  css += `.blog-header-image .logo{font-size:1.3em !important}`
+  // Article
+  css += `.article__title{font-size:1.4em;margin-bottom:0.4em}`
+  css += `.article__meta{font-size:12px;gap:4px;margin-bottom:1.5em}`
+  css += `.article__content p{margin-bottom:1.2em}`
+  css += `.article__content h2{margin-top:2em;margin-bottom:0.6em}`
+  css += `.article__content h3{margin-top:1.5em}`
+  css += `.article__content blockquote{margin:1em 0;padding-left:0.8em}`
+  css += `.article__content pre{padding:0.8em;font-size:13px;border-radius:6px;margin:1em 0}`
+  css += `.article__content table{font-size:13px;display:block;overflow-x:auto}`
+  css += `.article__content td,.article__content th{padding:6px 8px;white-space:nowrap}`
+  css += `.article__content ul,.article__content ol{padding-left:1.2em}`
+  // Cover
+  css += `.cover{margin-bottom:1.5em}.cover img{max-height:200px;border-radius:6px}`
+  // Cards
+  css += `.article-list{gap:1em}`
+  css += `.article-card__title{font-size:1em}`
+  css += `.article-card__excerpt{font-size:13px;-webkit-line-clamp:2}`
+  if (comp.article_card.style === 'card') {
+    css += `.article-card__body{padding:0.8em}`
+  }
+  // Tags
+  css += `.tag{font-size:12px;padding:1px 6px;margin-right:4px;margin-bottom:4px}`
+  // Author bio
+  css += `.author-bio{flex-wrap:wrap;gap:10px;padding:1.2em 0}`
+  css += `.author-bio__avatar{width:40px;height:40px}`
+  css += `.author-bio__description{font-size:13px}`
+  // Footer
+  css += `.footer{padding:1.5em 0;font-size:12px}`
   css += `}`
 
   // 14. Dark mode
@@ -315,14 +360,17 @@ export function generateFontPreloads(theme: BlogTheme): string[] {
 // --- Migration ---
 
 export function migrateOldSettings(settings: Record<string, unknown>): BlogTheme {
-  // Already new v3 format (has css.inline)
+  // Always regenerate CSS to pick up latest responsive styles
   if (
     settings.css &&
     typeof settings.css === 'object' &&
     typeof (settings.css as Record<string, unknown>).inline === 'string' &&
     (settings.css as Record<string, unknown>).inline !== ''
   ) {
-    return deepMerge(DEFAULT_THEME, settings as Partial<BlogTheme>)
+    const merged = deepMerge(DEFAULT_THEME, settings as Partial<BlogTheme>)
+    merged.css = { inline: generateInlineCSS(merged) }
+    merged.font_preload = generateFontPreloads(merged)
+    return merged
   }
 
   // v3 format but css.inline is empty → fill it

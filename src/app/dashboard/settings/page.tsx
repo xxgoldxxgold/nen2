@@ -185,20 +185,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Plan Section */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">プラン</h2>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white">
-                無料プラン（全機能無制限）
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                AI機能を無制限にご利用いただけます
-              </p>
-            </div>
-          </div>
-        </div>
 
         <button
           onClick={handleSave}

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
@@ -14,6 +15,8 @@ import {
   LogOut,
   Sparkles,
   Lightbulb,
+  Menu,
+  X,
 } from 'lucide-react'
 
 const navItems = [
@@ -29,6 +32,7 @@ const navItems = [
 export default function DashboardSidebar() {
   const pathname = usePathname()
   const router = useRouter()
+  const [open, setOpen] = useState(false)
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -37,13 +41,22 @@ export default function DashboardSidebar() {
     router.refresh()
   }
 
-  return (
-    <aside className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-      <div className="flex items-center gap-2 border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-        <Image src="/logo.png" alt="NEN2" width={28} height={28} className="h-7 w-7" />
-        <Link href="/dashboard" className="text-xl font-bold text-gray-900 dark:text-white">
-          NEN2
-        </Link>
+  const navContent = (
+    <>
+      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+        <div className="flex items-center gap-2">
+          <Image src="/logo.png" alt="NEN2" width={28} height={28} className="h-7 w-7" />
+          <Link href="/dashboard" className="text-xl font-bold text-gray-900 dark:text-white">
+            NEN2
+          </Link>
+        </div>
+        {/* Mobile close button */}
+        <button
+          onClick={() => setOpen(false)}
+          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 md:hidden dark:hover:bg-gray-800"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
@@ -56,6 +69,7 @@ export default function DashboardSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => setOpen(false)}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
@@ -78,6 +92,39 @@ export default function DashboardSidebar() {
           ログアウト
         </button>
       </div>
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* Mobile header bar */}
+      <div className="fixed left-0 right-0 top-0 z-40 flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 md:hidden dark:border-gray-700 dark:bg-gray-900">
+        <button
+          onClick={() => setOpen(true)}
+          className="rounded-lg p-1.5 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <Image src="/logo.png" alt="NEN2" width={24} height={24} className="h-6 w-6" />
+        <span className="text-sm font-bold text-gray-900 dark:text-white">NEN2</span>
+      </div>
+
+      {/* Mobile overlay */}
+      {open && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 md:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* Sidebar — desktop: fixed, mobile: slide-in drawer */}
+      <aside
+        className={`fixed top-0 z-50 flex h-screen w-64 flex-col border-r border-gray-200 bg-white transition-transform duration-200 md:relative md:translate-x-0 dark:border-gray-700 dark:bg-gray-900 ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {navContent}
+      </aside>
+    </>
   )
 }

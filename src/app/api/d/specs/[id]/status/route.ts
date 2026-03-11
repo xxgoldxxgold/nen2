@@ -30,6 +30,6 @@ export async function PATCH(request: Request, context: RouteContext) {
     .update({ status })
     .eq('id', specId)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'ステータスの更新に失敗しました' }, { status: 500 })
   return NextResponse.json({ success: true, status })
 }

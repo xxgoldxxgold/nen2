@@ -49,7 +49,7 @@ export async function POST(
     .eq('id', postId)
 
   if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 })
+    return NextResponse.json({ error: 'ロールバックに失敗しました' }, { status: 500 })
   }
 
   // Update tags if version has them

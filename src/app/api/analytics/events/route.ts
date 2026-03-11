@@ -19,8 +19,12 @@ export async function POST(request: Request) {
   // Limit batch size
   const batch = events.slice(0, 20)
 
+  // Validate UUID format for user_id to prevent abuse
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const allowedEventTypes = ['pageview', 'exit', 'read_complete', 'scroll', 'click']
+
   const rows = batch
-    .filter((e: any) => e.user_id && e.event_type && e.session_id)
+    .filter((e: any) => e.user_id && uuidRegex.test(e.user_id) && e.event_type && allowedEventTypes.includes(e.event_type) && e.session_id)
     .map((e: any) => ({
       user_id: e.user_id,
       post_id: e.post_id || null,

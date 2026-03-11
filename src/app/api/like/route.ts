@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     .from('post_likes')
     .upsert({ user_id: user.id, post_id: postId }, { onConflict: 'user_id,post_id' })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: '操作に失敗しました' }, { status: 500 })
   return NextResponse.json({ liked: true })
 }
 
@@ -34,7 +34,7 @@ export async function DELETE(request: Request) {
     .eq('user_id', user.id)
     .eq('post_id', postId)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: '操作に失敗しました' }, { status: 500 })
   return NextResponse.json({ liked: false })
 }
 

@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
     console.error('Upload header image error:', msg, error)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    return NextResponse.json({ error: 'ヘッダー画像のアップロードに失敗しました' }, { status: 500 })
   }
 }
 

@@ -56,12 +56,13 @@ ${input}`
       .select('id, title, summary, priority, category, spec_json, created_at')
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: '仕様書の保存に失敗しました' }, { status: 500 })
 
     return NextResponse.json({ spec })
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
-    return NextResponse.json({ error: `仕様書生成に失敗: ${msg}` }, { status: 500 })
+    console.error('Design spec generate error:', msg)
+    return NextResponse.json({ error: '仕様書生成に失敗しました' }, { status: 500 })
   }
 }
 

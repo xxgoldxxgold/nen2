@@ -63,7 +63,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
     console.error('Set header photo error:', msg, error)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    return NextResponse.json({ error: 'ヘッダー写真の設定に失敗しました' }, { status: 500 })
   }
 }
 

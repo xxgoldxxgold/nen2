@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     .from('user_follows')
     .upsert({ follower_id: user.id, user_id: userId }, { onConflict: 'follower_id,user_id' })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: '操作に失敗しました' }, { status: 500 })
   return NextResponse.json({ followed: true })
 }
 
@@ -35,7 +35,7 @@ export async function DELETE(request: Request) {
     .eq('follower_id', user.id)
     .eq('user_id', userId)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: '操作に失敗しました' }, { status: 500 })
   return NextResponse.json({ followed: false })
 }
 

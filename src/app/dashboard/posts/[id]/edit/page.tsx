@@ -37,11 +37,19 @@ export default function EditPostPage() {
 
   useEffect(() => {
     const fetchPost = async () => {
+      const auth = createClient()
+      const { data: { user } } = await auth.auth.getUser()
+      if (!user) {
+        router.push('/login')
+        return
+      }
+
       const db = createDataClient()
       const { data: post } = await db
         .from('blog_posts')
         .select('*')
         .eq('id', postId)
+        .eq('user_id', user.id)
         .single()
 
       if (!post) {
@@ -80,6 +88,14 @@ export default function EditPostPage() {
     const finalStatus = saveStatus || status
     setSaving(true)
 
+    const auth = createClient()
+    const { data: { user } } = await auth.auth.getUser()
+    if (!user) {
+      alert('ログインが必要です')
+      setSaving(false)
+      return
+    }
+
     const db = createDataClient()
     const { error } = await db
       .from('blog_posts')
@@ -98,9 +114,10 @@ export default function EditPostPage() {
           : post?.published_at,
       })
       .eq('id', postId)
+      .eq('user_id', user.id)
 
     if (error) {
-      alert('保存に失敗しました: ' + error.message)
+      alert('保存に失敗しました')
       setSaving(false)
       return
     }

@@ -29,7 +29,7 @@ export async function POST(_request: Request, context: RouteContext) {
   } else {
     // Add vote (toggle on)
     const { error } = await db.from('spec_votes').insert({ spec_id: specId, user_id: user.id })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: '投票に失敗しました' }, { status: 500 })
     // Recount
     const { count } = await db.from('spec_votes').select('*', { count: 'exact', head: true }).eq('spec_id', specId)
     await db.from('design_specs').update({ vote_count: count || 0 }).eq('id', specId)

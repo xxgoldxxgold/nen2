@@ -52,7 +52,7 @@ export async function GET(request: Request) {
   }
 
   const { data, error } = await query.limit(100)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: '仕様書の取得に失敗しました' }, { status: 500 })
 
   // Get current user's votes
   const supabase = await createClient()

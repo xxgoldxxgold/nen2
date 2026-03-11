@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
     console.error('Favicon generate error:', msg, error)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    return NextResponse.json({ error: 'ファビコンの生成に失敗しました' }, { status: 500 })
   }
 }
 

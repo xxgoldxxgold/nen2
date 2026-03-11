@@ -20,12 +20,14 @@ export async function GET(request: Request) {
   prevSince.setDate(prevSince.getDate() - days * 2)
   const prevUntil = sinceISO
 
-  // Current period stats
+  // Current period stats (limit to 10000 rows to prevent memory issues)
   const { data: currentEvents } = await db
     .from('blog_analytics_events')
     .select('event_type, session_id, post_id, referrer, device_type, duration_seconds, created_at')
     .eq('user_id', user.id)
     .gte('created_at', sinceISO)
+    .order('created_at', { ascending: false })
+    .limit(10000)
 
   // Previous period stats (for trend)
   const { count: prevPageviews } = await db

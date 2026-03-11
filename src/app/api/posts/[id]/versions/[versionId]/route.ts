@@ -13,6 +13,17 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
 
+  // Verify post ownership
+  const { data: post } = await db
+    .from('blog_posts')
+    .select('user_id')
+    .eq('id', postId)
+    .single()
+
+  if (!post || post.user_id !== user.id) {
+    return NextResponse.json({ error: '権限がありません' }, { status: 403 })
+  }
+
   const { data, error } = await db
     .from('blog_post_versions')
     .select('*')

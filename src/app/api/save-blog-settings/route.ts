@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Save blog settings DB error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: '設定の保存に失敗しました' }, { status: 500 })
     }
 
     // Revalidate public blog page
@@ -45,6 +45,6 @@ export async function POST(request: Request) {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
     console.error('Save blog settings error:', msg)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    return NextResponse.json({ error: '設定の保存に失敗しました' }, { status: 500 })
   }
 }

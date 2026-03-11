@@ -14,6 +14,17 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
 
+  // Verify post ownership
+  const { data: post } = await db
+    .from('blog_posts')
+    .select('user_id')
+    .eq('id', postId)
+    .single()
+
+  if (!post || post.user_id !== user.id) {
+    return NextResponse.json({ error: '権限がありません' }, { status: 403 })
+  }
+
   const url = new URL(request.url)
   const limit = parseInt(url.searchParams.get('limit') || '50')
   const offset = parseInt(url.searchParams.get('offset') || '0')
@@ -25,7 +36,7 @@ export async function GET(
     .order('version_number', { ascending: false })
     .range(offset, offset + limit - 1)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: '操作に失敗しました' }, { status: 500 })
   return NextResponse.json(data)
 }
 
@@ -98,9 +109,9 @@ export async function POST(
 
   const versionNumber = (maxVersion?.version_number || 0) + 1
 
-  // Word count from content_html
+  // Character count from content_html (suitable for Japanese text)
   const plainText = (content_html || '').replace(/<[^>]*>/g, '').trim()
-  const wordCount = plainText.length > 0 ? plainText.split(/\s+/).length : 0
+  const wordCount = plainText.length
 
   const { data: version, error } = await db
     .from('blog_post_versions')
@@ -122,6 +133,6 @@ export async function POST(
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: '操作に失敗しました' }, { status: 500 })
   return NextResponse.json(version, { status: 201 })
 }

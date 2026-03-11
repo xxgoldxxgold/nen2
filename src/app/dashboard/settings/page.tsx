@@ -80,7 +80,7 @@ export default function SettingsPage() {
       if (error.message.includes('unique') || error.message.includes('duplicate')) {
         setMessage('このユーザー名は既に使用されています')
       } else {
-        setMessage('保存に失敗しました: ' + error.message)
+        setMessage('保存に失敗しました。しばらくしてからお試しください')
       }
     } else {
       setMessage('保存しました')

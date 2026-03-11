@@ -2,6 +2,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Sparkles, Wand2, Palette, BarChart3, Zap, Globe, PenSquare } from 'lucide-react'
 
+function CopyrightYear() {
+  return <>{new Date().getFullYear()}</>
+}
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
@@ -27,7 +31,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="relative overflow-hidden pt-32 pb-20">
+      <section className="relative overflow-hidden pt-28 pb-14 sm:pt-32 sm:pb-20">
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950" />
         <div className="mx-auto max-w-4xl px-6 text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
@@ -41,9 +45,8 @@ export default function LandingPage() {
               ブログが完成する
             </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600 dark:text-gray-400">
-            記事作成・デザイン・SEO対策の全工程でAIが支援。
-            テクニカルな知識は不要です。今すぐ、あなただけのブログを始めましょう。
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-gray-600 dark:text-gray-400 sm:text-lg">
+            記事作成・デザイン・SEO対策の全工程でAIが支援。テクニカルな知識は不要です。今すぐ、あなただけのブログを始めましょう。
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
@@ -64,34 +67,34 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20">
+      <section id="features" className="py-14 sm:py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               AIがブログ運営の全てをサポート
             </h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">
+            <p className="mt-4 text-base leading-relaxed text-gray-600 dark:text-gray-400 sm:text-lg">
               記事を書くだけじゃない。デザインもSEOもAIにおまかせ。
             </p>
           </div>
 
-          <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid grid-cols-1 gap-6 sm:mt-16 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
             <FeatureCard
               icon={<Wand2 className="h-6 w-6" />}
               title="AI記事生成"
-              description="タイトルを入力するだけで、見出し構成から本文まで自動生成。トーンや文体も選択可能。"
+              description="タイトルを入力するだけで、見出し構成から本文まで自動生成。トーンや文体も選択できます。"
               color="blue"
             />
             <FeatureCard
               icon={<Sparkles className="h-6 w-6" />}
               title="AIリライト"
-              description="テキストを選択して「より簡潔に」「より詳しく」。AIがあなたの文章を磨き上げます。"
+              description="テキストを選択して「より簡潔に」「より詳しく」と指示。AIがあなたの文章を磨き上げます。"
               color="purple"
             />
             <FeatureCard
               icon={<Palette className="h-6 w-6" />}
               title="AIデザイン"
-              description="「もっとクールに」と話しかけるだけ。AIがブログのデザインを自動調整します。"
+              description="「もっとクールに」と話しかけるだけで、AIがブログのデザインを自動で調整します。"
               color="pink"
             />
             <FeatureCard
@@ -103,13 +106,13 @@ export default function LandingPage() {
             <FeatureCard
               icon={<Zap className="h-6 w-6" />}
               title="高速配信"
-              description="Next.jsベースのSSG/SSRで超高速表示。Vercelの世界中のCDNで配信。"
+              description="Next.jsベースのSSG/SSRで超高速表示。世界中のCDNから最速で配信します。"
               color="yellow"
             />
             <FeatureCard
               icon={<Globe className="h-6 w-6" />}
               title="簡単公開"
-              description="サブドメイン自動割り当て。カスタムドメインも対応。すぐにブログを公開できます。"
+              description="サブドメインを自動で割り当て。カスタムドメインにも対応し、すぐにブログを公開できます。"
               color="indigo"
             />
           </div>
@@ -117,12 +120,12 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20">
+      <section className="py-14 sm:py-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             今すぐ、AIの力でブログを始めよう
           </h2>
-          <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+          <p className="mt-4 text-base leading-relaxed text-gray-600 dark:text-gray-400 sm:text-lg">
             登録は無料。クレジットカード不要。30秒で開始できます。
           </p>
           <Link
@@ -148,7 +151,7 @@ export default function LandingPage() {
               <Link href="/signup" className="hover:text-gray-700 dark:hover:text-gray-300">新規登録</Link>
             </div>
             <p className="text-xs text-gray-400">
-              &copy; 2026 NEN2. All rights reserved.
+              &copy; <CopyrightYear /> NEN2. All rights reserved.
             </p>
           </div>
         </div>
@@ -177,7 +180,7 @@ function FeatureCard({
         {icon}
       </div>
       <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400">{description}</p>
+      <p className="mt-2 text-sm leading-7 text-gray-600 dark:text-gray-400">{description}</p>
     </div>
   )
 }

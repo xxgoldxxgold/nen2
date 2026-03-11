@@ -17,12 +17,12 @@ export default function LandingPage() {
             NEN2
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+            <Link href="/login" className="min-h-[44px] flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white px-2">
               ログイン
             </Link>
             <Link
               href="/signup"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+              className="min-h-[44px] flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
             >
               無料で始める
             </Link>
@@ -31,10 +31,10 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="relative overflow-hidden pt-28 pb-14 sm:pt-32 sm:pb-20">
+      <section className="relative overflow-hidden pt-24 pb-10 sm:pt-32 sm:pb-20">
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950" />
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
+          <div className="mb-4 sm:mb-6 inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
             <Sparkles className="h-4 w-4" />
             AIネイティブ設計のブログプラットフォーム
           </div>
@@ -45,10 +45,10 @@ export default function LandingPage() {
               ブログが完成する
             </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-gray-700 dark:text-gray-300 sm:text-lg">
-            記事作成・デザイン・SEO対策の全工程でAIが支援。テクニカルな知識は不要です。今すぐ、あなただけのブログを始めましょう。
+          <p className="mx-auto mt-4 sm:mt-6 max-w-2xl text-base leading-relaxed text-gray-700 dark:text-gray-300 sm:text-lg">
+            記事作成・デザイン・SEO対策まで、全工程をAIが支援。テクニカルな知識は不要。あなただけのブログを今すぐ始めましょう。
           </p>
-          <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <div className="mt-6 sm:mt-8 flex flex-col items-center gap-3 sm:gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/signup"
               className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-700 hover:shadow-xl"
@@ -67,8 +67,8 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-14 sm:py-20">
-        <div className="mx-auto max-w-6xl px-6">
+      <section id="features" className="py-10 sm:py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               AIがブログ運営の全てをサポート
@@ -120,8 +120,8 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-14 sm:py-20">
-        <div className="mx-auto max-w-4xl px-6 text-center">
+      <section className="py-10 sm:py-20">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             今すぐ、AIの力でブログを始めよう
           </h2>
@@ -133,7 +133,7 @@ export default function LandingPage() {
             className="mt-8 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-700"
           >
             <Sparkles className="h-5 w-5" />
-            無料で始める
+            今すぐ無料で始める
           </Link>
         </div>
       </section>
@@ -146,11 +146,11 @@ export default function LandingPage() {
               <Image src="/logo.png" alt="NEN2" width={20} height={20} className="h-5 w-5" />
               NEN2
             </div>
-            <div className="flex gap-6 text-sm text-gray-600 dark:text-gray-400">
-              <Link href="/login" className="hover:text-gray-700 dark:hover:text-gray-300">ログイン</Link>
-              <Link href="/signup" className="hover:text-gray-700 dark:hover:text-gray-300">新規登録</Link>
+            <div className="flex gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <Link href="/login" className="min-h-[44px] flex items-center px-3 hover:text-gray-700 dark:hover:text-gray-300">ログイン</Link>
+              <Link href="/signup" className="min-h-[44px] flex items-center px-3 hover:text-gray-700 dark:hover:text-gray-300">新規登録</Link>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               &copy; <CopyrightYear /> NEN2. All rights reserved.
             </p>
           </div>

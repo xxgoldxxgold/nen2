@@ -92,7 +92,7 @@ export default function LoginForm() {
             </label>
             <Link
               href="/forgot-password"
-              className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400"
+              className="min-h-[44px] flex items-center text-sm font-medium text-blue-700 hover:text-blue-600 dark:text-blue-300 dark:hover:text-blue-200"
             >
               パスワードを忘れた方
             </Link>

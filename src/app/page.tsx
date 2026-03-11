@@ -45,7 +45,7 @@ export default function LandingPage() {
               ブログが完成する
             </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-gray-600 dark:text-gray-400 sm:text-lg">
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-gray-700 dark:text-gray-300 sm:text-lg">
             記事作成・デザイン・SEO対策の全工程でAIが支援。テクニカルな知識は不要です。今すぐ、あなただけのブログを始めましょう。
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -73,12 +73,12 @@ export default function LandingPage() {
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               AIがブログ運営の全てをサポート
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-gray-600 dark:text-gray-400 sm:text-lg">
+            <p className="mt-4 text-base leading-relaxed text-gray-700 dark:text-gray-300 sm:text-lg">
               記事を書くだけじゃない。デザインもSEOもAIにおまかせ。
             </p>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 gap-6 sm:mt-16 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
+          <div className="mt-10 grid grid-cols-1 gap-8 sm:mt-16 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
             <FeatureCard
               icon={<Wand2 className="h-6 w-6" />}
               title="AI記事生成"
@@ -125,7 +125,7 @@ export default function LandingPage() {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             今すぐ、AIの力でブログを始めよう
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-gray-600 dark:text-gray-400 sm:text-lg">
+          <p className="mt-4 text-base leading-relaxed text-gray-700 dark:text-gray-300 sm:text-lg">
             登録は無料。クレジットカード不要。30秒で開始できます。
           </p>
           <Link
@@ -146,11 +146,11 @@ export default function LandingPage() {
               <Image src="/logo.png" alt="NEN2" width={20} height={20} className="h-5 w-5" />
               NEN2
             </div>
-            <div className="flex gap-6 text-sm text-gray-500">
+            <div className="flex gap-6 text-sm text-gray-600 dark:text-gray-400">
               <Link href="/login" className="hover:text-gray-700 dark:hover:text-gray-300">ログイン</Link>
               <Link href="/signup" className="hover:text-gray-700 dark:hover:text-gray-300">新規登録</Link>
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               &copy; <CopyrightYear /> NEN2. All rights reserved.
             </p>
           </div>
@@ -175,12 +175,12 @@ function FeatureCard({
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-6 transition-shadow hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
       <div className={`inline-flex rounded-xl p-3 ${colors[color]}`}>
         {icon}
       </div>
       <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
-      <p className="mt-2 text-sm leading-7 text-gray-600 dark:text-gray-400">{description}</p>
+      <p className="mt-2 text-base leading-7 text-gray-700 dark:text-gray-300">{description}</p>
     </div>
   )
 }

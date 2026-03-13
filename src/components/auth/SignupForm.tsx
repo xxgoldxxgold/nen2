@@ -34,6 +34,7 @@ export default function SignupForm() {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           display_name: displayName || email.split('@')[0],
+          signup_source: 'nen2',
         },
       },
     })

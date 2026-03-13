@@ -12,10 +12,12 @@ export default function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showResetHint, setShowResetHint] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setShowResetHint(false)
     setLoading(true)
 
     const supabase = createClient()
@@ -29,6 +31,9 @@ export default function LoginForm() {
         'Invalid login credentials': 'メールアドレスまたはパスワードが正しくありません',
         'Email not confirmed': 'メールアドレスが未確認です。受信メールの確認リンクを開いてください',
         'Too many requests': '試行回数が多すぎます。しばらくしてからお試しください',
+      }
+      if (error.message.includes('Invalid login')) {
+        setShowResetHint(true)
       }
       setError(messages[error.message] || `認証エラー: ${error.message}`)
       setLoading(false)
@@ -68,6 +73,15 @@ export default function LoginForm() {
           <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </div>
+        )}
+        {showResetHint && (
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Googleで登録した方は
+            <Link href="/forgot-password" className="text-blue-600 font-semibold ml-1 dark:text-blue-400">
+              こちらからパスワードを設定
+            </Link>
+            してください。
+          </p>
         )}
 
         <div>
